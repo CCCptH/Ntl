@@ -1,0 +1,14 @@
+export module ntl.type_traits;
+export import ntl.type_traits.base_classes;
+export import ntl.type_traits.type_modifications;
+export import ntl.type_traits.composite_type_categories;
+export import ntl.type_traits.miscellaneous_transformations;
+export import ntl.type_traits.operation_on_traits;
+export import ntl.type_traits.primary_type_categories;
+export import ntl.type_traits.property_queries;
+export import ntl.type_traits.sign_modifiers;
+export import ntl.type_traits.support_operations;
+export import ntl.type_traits.type_modifications;
+export import ntl.type_traits.type_properties;
+export import ntl.type_traits.type_relationships;
+export import ntl.type_traits.swappable_traits;

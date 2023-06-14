@@ -1,0 +1,407 @@
+module;
+#include <type_traits>
+export module ntl.string.format;
+export import ntl.utils.nint;
+export import ntl.string.text;
+import ntl.iterator.concepts;
+import ntl.utils;
+import ntl.exceptions;
+import ntl.functional.invoke;
+import ntl.string.text;
+import ntl.type_traits;
+import ntl.utils.monostate;
+import ntl.string.string_view;
+import ntl.concepts;
+/**
+ * This format lib is specified for utf32 and text
+*/
+
+export namespace Ne
+{
+    class FormatError: public Exception {
+    public:
+        using Exception::Exception;
+    };
+    template<class Context>
+    class FormatArg;
+    template<class OutIter>
+        requires ConceptOutputIterator<OutIter, utf32>
+    class FormatContext;
+    template<class T>
+    class Formatter;
+    
+    class FormatParseContext;
+
+    template<class T>
+    concept ConceptFormattable = 
+        ConceptSemiregular<T> and
+        requires (Formatter<TypeUnCVRef<T>> f, const Formatter<TypeUnCVRef<T>> cf, T t, FormatContext<utf32*> fc, FormatParseContext pc) {
+            {f.parse(pc)} -> ConceptSameAs<typename FormatParseContext::Iterator>;
+            {cf.format(t, fc)} -> ConceptSameAs<utf32*>;
+        };
+}
+
+namespace Ne
+{
+    enum class FormatArgType: uint8
+    {
+        NONE,
+        BOOLEAN,
+        INT32,
+        INT64, 
+        UINT32,
+        UINT64, 
+        FLOAT,
+        DOUBLE,
+        TEXT_VIEW,
+        PTR,
+        HANDLE
+    };
+
+    template<class Context, class T>
+    consteval FormatArgType GetFormatArgType(T&& t);
+
+    template<class Context, ConceptSameAs<bool> T>
+    consteval FormatArgType GetFormatArgType(T&& t) {
+        return FormatArgType::BOOLEAN;
+    }
+
+    template<class Context, ConceptSignedIntegral T>
+    consteval FormatArgType GetFormatArgType(T&& t) {
+        if constexpr (sizeof(T) <= sizeof(int32)) {
+            return FormatArgType::INT32;
+        }
+        else if constexpr (sizeof(T) == sizeof(int64)) {
+            return FormatArgType::INT64;
+        }
+        else {
+            static_assert(ALWAYS_TRUE<int>, "not support type");
+        }
+    }
+
+    template<class Context, ConceptUnsignedIntegral T>
+    consteval FormatArgType GetFormatArgType(T&& t) {
+        if constexpr (sizeof(T) <= sizeof(uint32)) {
+            return FormatArgType::UINT32;
+        }
+        else if constexpr (sizeof(T) == sizeof(uint64)) {
+            return FormatArgType::UINT64;
+        }
+        else {
+            static_assert(ALWAYS_TRUE<int>, "not support type");
+        }
+    }
+
+    template<class Context, ConceptSameAs<float> T>
+    consteval FormatArgType GetFormatArgType(T&& t) {
+        return FormatArgType::FLOAT;
+    }
+
+    template<class Context, ConceptSameAs<double> T>
+    consteval FormatArgType GetFormatArgType(T&& t) {
+        return FormatArgType::DOUBLE;
+    }
+
+    template<class Context, ConceptSameAs<TextView> T>
+    consteval FormatArgType GetFormatArgType(T&& t) {
+        return FormatArgType::TEXT_VIEW;
+    }
+
+    template<class Context, ConceptSameAs<Text> T>
+    consteval FormatArgType GetFormatArgType(T&& t) {
+        return FormatArgType::TEXT_VIEW;
+    }
+
+    template<class Context, class T>
+        requires 
+            ConceptSameAs<T, void*> or ConceptSameAs<T, const void*> or ConceptSameAs<T, nullptr_t>
+    consteval FormatArgType GetFormatArgType(T&& t) {
+        return FormatArgType::PTR;
+    }
+
+    template<class Context, class T>
+    consteval FormatArgType GetFormatArgType(T&& t) {
+        return FormatArgType::HANDLE;
+    }
+
+    template<class Context, class T>
+        requires not ConceptFormattable<T>
+    consteval FormatArgType GetFormatArgType(T&& t) = delete;
+
+}
+export namespace Ne {
+    template<class VisitorType, class FormatContextType>
+    decltype(auto) VisitFormatArg(VisitorType&& visitor, FormatArg<FormatContextType> arg) {
+        switch (arg.type) {
+            case FormatArgType::NONE:
+                return Invoke(Forward<VisitorType>(visitor), arg.value.monostate);
+            case FormatArgType::BOOLEAN:
+                return Invoke(Forward<VisitorType>(visitor), arg.value.boolean_value);
+            case FormatArgType::INT32:
+                return Invoke(Forward<VisitorType>(visitor), arg.value.int32_value);
+            case FormatArgType::INT64:
+                return Invoke(Forward<VisitorType>(visitor), arg.value.int64_value);
+            case FormatArgType::UINT32:
+                return Invoke(Forward<VisitorType>(visitor), arg.value.uint32_value);
+            case FormatArgType::UINT64:
+                return Invoke(Forward<VisitorType>(visitor), arg.value.uint64_value);
+            case FormatArgType::FLOAT:
+                return Invoke(Forward<VisitorType>(visitor), arg.value.float_value);
+            case FormatArgType::DOUBLE:
+                return Invoke(Forward<VisitorType>(visitor), arg.value.double_value);
+            case FormatArgType::TEXT_VIEW:
+                return Invoke(Forward<VisitorType>(visitor), arg.value.text_view);
+            case FormatArgType::PTR:
+                return Invoke(Forward<VisitorType>(visitor), arg.value.ptr_value);
+            case FormatArgType::HANDLE:
+                return Invoke(Forward<VisitorType>(visitor), arg.value.handle);
+        }
+        Assert(true);
+    }
+
+    class FormatParseContext
+    {
+    public:
+        using Iterator = TextView::ConstIter;
+        using ConstIter = Iterator;
+
+        constexpr explicit
+        FormatParseContext(TextView fmt_text, int64 num_args=0) noexcept
+            : first(fmt_text.begin())
+            , last(fmt_text.end())
+            , indexing(UNKNOWN)
+            , next_arg_id(0)
+            , num_args(num_args)
+        {}
+
+        FormatParseContext(const FormatParseContext&) = delete;
+        FormatParseContext& operator=(const FormatParseContext&) = delete;
+
+        constexpr ConstIter begin() const noexcept {
+            return first;
+        }
+        constexpr ConstIter end() const noexcept {
+            return last;
+        }
+        constexpr void advanceTo(ConstIter it) noexcept {
+            first = it;
+        }
+        constexpr int64 nextArgId() {
+            if (indexing == MANUAL) throw FormatError("Using automatic argument numbering in manual argument numbering mode");
+
+            if (indexing == UNKNOWN) indexing = AUTOMATIC;
+            return next_arg_id++;
+        }
+
+        constexpr void checkArgId(int64 id) {
+            if (indexing == AUTOMATIC) throw FormatError("Using manual argument numbering in automatic argument numbering mode");
+            if (indexing == UNKNOWN) indexing = MANUAL;
+            if (std::is_constant_evaluated() && id >= num_args) throw FormatError("Argument index outside the valid range");
+        }
+
+    private:
+        Iterator first;
+        Iterator last;
+        enum Indexing { UNKNOWN, MANUAL, AUTOMATIC };
+        Indexing indexing;
+        int64 next_arg_id;
+        int64 num_args;
+    };
+}
+namespace Ne
+{
+    template<class FormatContextType>
+    class FormatArgValue
+    {
+    public:
+        struct Handle
+        {
+            const void* ptr;
+            void (*format_functor)(FormatParseContext&, FormatContextType&, const void*);
+            template<class T>
+            explicit Handle(T&& v) noexcept 
+                : ptr(GetAddress(v))
+                , format_functor(
+                    [] (FormatParseContext& parse_ctx, FormatContextType& ctx, const void* p) -> void {
+                        using D = TypeUnCVRef<T>;
+                        using FormatterType = typename FormatContextType::template FormatterType<D>;
+                        constexpr bool CONST_FORMATABLE = requires {
+                            FormatterType().format(Decval<const D&>(), Decval<FormatContextType&()>);
+                        };
+                        static_assert(CONST_FORMATABLE || !TestIsConst<TypeUnCVRef<T>>);
+                        using Q = TypeConditional<CONST_FORMATABLE, const D, D>;
+
+                        FormatterType f;
+                        parse_ctx.advanceTo(f.parse(parse_ctx));
+                        ctx.advanceTo(f.format(*const_cast<Q*>(static_cast<const D*>(p)), ctx));
+
+                    }
+                )
+            {}
+        };
+
+        union {
+            Monostate monostate;
+            bool boolean_value;
+            int32 int32_value;
+            int64 int64_value;
+            uint32 uint32_value;
+            uint64 uint64_value;
+            float float_value;
+            double double_value;
+            TextView text_view;
+            const void* ptr_value;
+            Handle handle;
+        };
+
+        FormatArgValue() noexcept : monostate () {}
+        FormatArgValue(bool x) noexcept : boolean_value (x) {}
+        FormatArgValue(int32 x) noexcept : int32_value (x) {}
+        FormatArgValue(int64 x) noexcept : int64_value (x) {}
+        FormatArgValue(uint32 x) noexcept : uint32_value (x) {}
+        FormatArgValue(uint64 x) noexcept : uint64_value (x) {}
+        FormatArgValue(float x) noexcept : float_value (x) {}
+        FormatArgValue(double x) noexcept : double_value (x) {}
+        FormatArgValue(TextView x) noexcept : text_view (x) {}
+        FormatArgValue(const void* x) noexcept : ptr_value (x) {}
+        FormatArgValue(Handle x) noexcept : handle (Move(x)) {}
+    };
+
+    template<class Context>
+    class FormatArg
+    {
+    private:
+    public:
+        FormatArgType type;
+        FormatArgValue<Context> value;
+
+        using CharType = utf32;
+
+        FormatArg() noexcept : type {FormatArgType::NONE }, value{} {}
+
+        FormatArg(FormatArgType type, FormatArgValue<Context> value): type{type}, value{value} {}
+        explicit operator bool () const noexcept { return type != FormatArgType::NONE; }
+
+
+        class Handle {
+        private:
+            typename FormatArgValue<Context>::Handle& handle;
+        public:
+            explicit Handle(typename FormatArgValue<Context>::Handle& handle): handle(handle) {}
+            void format(FormatParseContext& parse, Context& ctx) {
+                handle.format_functor(parse, ctx, handle.ptr);
+            }
+        };
+    };
+
+    template<class Context, class T>
+    FormatArg<Context> CreateFormatArg(T&& v) noexcept  {
+        constexpr FormatArgType type = GetFormatArgType(v);
+        using AT = FormatArgType;
+        using RT = FormatArg<Context>;
+        if constexpr (type == AT::INT32) {
+            return RT{type, static_cast<int32>(v)};
+        }
+        else if constexpr (type == AT::INT64) {
+            return RT{type, static_cast<int64>(v)};
+        }
+        else if constexpr (type == AT::UINT32) {
+            return RT{type, static_cast<uint32>(v)};
+        }
+        else if constexpr (type == AT::UINT32) {
+            return RT{type, static_cast<uint32>(v)};
+        }
+        else if constexpr (type == AT::PTR) {
+            return RT{type, static_cast<const void*>(v)};
+        }
+        else if constexpr (type == AT::TEXT_VIEW) {
+            return RT{type, TextView{Forward<T>(v)}};
+        }
+        else if constexpr (type == AT::HANDLE) {
+            return RT{type, typename FormatArgValue<Context>::Handle{Forward<T>(v)}};
+        }
+        else {
+            return RT{type, v};
+        }
+    }
+
+    template<class Context, class ...Args>
+    class FormatArgsStore
+    {
+    public:
+        template<class Context, uint64 N>
+        struct Storage {
+            FormatArg<Context> format_args[N];
+        };
+
+        Storage<Context, sizeof...(Args)> storage;
+
+        FormatArgsStore(Args&...args) {
+            if constexpr (sizeof...(Args) != 0) {
+                FormatArg<Context>* data = storage.format_args;
+                (
+                    [&] () -> void {
+                        *data++ = CreateFormatArg<Context>(args); 
+                    }(), ...
+                );
+            }
+        }
+    };
+
+    template<class Context>
+    class FormatArgs
+    {
+    private:
+        const FormatArg<Context>* args;
+        size_t sz;
+    public:
+        FormatArgs() = default;
+        template<class ...Args>
+        FormatArgs(const FormatArgsStore<Context, Args...>& store) noexcept {
+            args = store.storage.args;
+            sz = sizeof...(Args);
+        }
+        FormatArg<Context> get(size_t id) const noexcept {
+            if (id > sz) {
+                return FormatArg<Context>{};
+            }
+            else {
+                return args[id];
+            }
+        }
+    };
+
+    template<class OutIter>
+        requires ConceptOutputIterator<OutIter, utf32>
+    class FormatContext
+    {
+    public:
+        using Iterator = OutIter;
+        using CharType = utf32;
+
+        template<class T>
+        using FormatterType = Formatter<T>;
+
+        FormatContext(Iterator it, FormatArgs<FormatContext> args)
+            : out_iter(Move(it)), args(args)
+        {}
+        FormatContext(const FormatContext&) noexcept = delete;
+        FormatContext& operator=(const FormatContext&) noexcept = delete;
+
+        FormatArg<FormatContext> arg(size_t i) const noexcept {
+            return args.get(i);
+        }
+
+        Iterator out() const noexcept {
+            return Move(out_iter);
+        }
+
+        void advanceTo(Iterator it) noexcept {
+            out_iter = Move(it);
+        }
+
+    private:
+        Iterator out_iter;
+        FormatArgs<FormatContext> args;
+    };
+}

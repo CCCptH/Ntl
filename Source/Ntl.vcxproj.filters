@@ -1,0 +1,357 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="资源文件">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Public">
+      <UniqueIdentifier>{d695334b-967e-48d2-ad07-041762cf774a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Public\Utilities">
+      <UniqueIdentifier>{93fb1a19-5f89-497a-9de8-5ffb116829d5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Public\TypeTraits">
+      <UniqueIdentifier>{0d0cc22e-6048-4fba-9ac8-4dd18fddeee8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Public\Concepts">
+      <UniqueIdentifier>{7b154d49-a78f-4329-a983-17485af5600e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Private">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Public\Containers">
+      <UniqueIdentifier>{da2ebb3a-e3cd-4c46-bcbd-12ecaacd515e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Public\Functional">
+      <UniqueIdentifier>{bc92af04-66f3-4483-b140-24d9e02a97c0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Public\Iterator">
+      <UniqueIdentifier>{f63bb917-860e-465e-a695-58f4f3da3c69}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Public\Memory">
+      <UniqueIdentifier>{4d6349f1-914d-49f0-bc55-dab3aaca89e7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Public\String">
+      <UniqueIdentifier>{59d9158f-3591-4d5d-8189-5fbe9477954c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Private\String">
+      <UniqueIdentifier>{b3ec29db-0637-4bd9-b09f-62a82ccc6934}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Public\IO">
+      <UniqueIdentifier>{c234ca5a-fec2-4dde-9694-eee97a1c3445}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Public\Ranges">
+      <UniqueIdentifier>{e50959c4-19e3-4339-aad2-824965f59f60}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Public\TypeTraits\BaseClasses.ixx">
+      <Filter>Public\TypeTraits</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\TypeTraits\OperationOnTraits.ixx">
+      <Filter>Public\TypeTraits</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\TypeTraits\CompositeTypeCategories.ixx">
+      <Filter>Public\TypeTraits</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\TypeTraits\MiscellaneousTransformations.ixx">
+      <Filter>Public\TypeTraits</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\TypeTraits\PrimaryTypeCategories.ixx">
+      <Filter>Public\TypeTraits</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\TypeTraits\PropertyQueries.ixx">
+      <Filter>Public\TypeTraits</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\TypeTraits\SignModifiers.ixx">
+      <Filter>Public\TypeTraits</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\TypeTraits\SupportOperations.ixx">
+      <Filter>Public\TypeTraits</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\TypeTraits\TypeModifications.ixx">
+      <Filter>Public\TypeTraits</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\TypeTraits\TypeProperties.ixx">
+      <Filter>Public\TypeTraits</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\TypeTraits\TypeRelationships.ixx">
+      <Filter>Public\TypeTraits</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Utilities\Assert.ixx">
+      <Filter>Public\Utilities</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Utilities\Debug.ixx">
+      <Filter>Public\Utilities</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Utilities\Declval.ixx">
+      <Filter>Public\Utilities</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Utilities\Exchange.ixx">
+      <Filter>Public\Utilities</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Utilities\Forward.ixx">
+      <Filter>Public\Utilities</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Utilities\GetAddress.ixx">
+      <Filter>Public\Utilities</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Utilities\InitList.ixx">
+      <Filter>Public\Utilities</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Utilities\IntegerSequence.ixx">
+      <Filter>Public\Utilities</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Utilities\Move.ixx">
+      <Filter>Public\Utilities</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Utilities\Swap.ixx">
+      <Filter>Public\Utilities</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Utilities\Types.ixx">
+      <Filter>Public\Utilities</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Concepts\Callable.ixx">
+      <Filter>Public\Concepts</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Concepts\Comparison.ixx">
+      <Filter>Public\Concepts</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Concepts\CoreLanguage.ixx">
+      <Filter>Public\Concepts</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Concepts\Object.ixx">
+      <Filter>Public\Concepts</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Concepts\Swappable.ixx">
+      <Filter>Public\Concepts</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Concepts.ixx">
+      <Filter>Public</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Containers.ixx">
+      <Filter>Public</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Exceptions.ixx">
+      <Filter>Public</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Iterator.ixx">
+      <Filter>Public</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Monostate.ixx">
+      <Filter>Public</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Ntl.ixx">
+      <Filter>Public</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Tuple.ixx">
+      <Filter>Public</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\TypeTraits.ixx">
+      <Filter>Public</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Utilities.ixx">
+      <Filter>Public</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Variant.ixx">
+      <Filter>Public</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Containers\Array.ixx">
+      <Filter>Public\Containers</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Containers\DynamicArray.ixx">
+      <Filter>Public\Containers</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Containers\KeyValue.ixx">
+      <Filter>Public\Containers</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Containers\List.ixx">
+      <Filter>Public\Containers</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Containers\RedBlackTree.ixx">
+      <Filter>Public\Containers</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Functional\IdentityEqual.ixx">
+      <Filter>Public\Functional</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Functional\Invoke.ixx">
+      <Filter>Public\Functional</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Functional\RefWrapper.ixx">
+      <Filter>Public\Functional</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Iterator\Advance.ixx">
+      <Filter>Public\Iterator</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Iterator\AlgRequirements.ixx">
+      <Filter>Public\Iterator</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Iterator\BackInsertIterator.ixx">
+      <Filter>Public\Iterator</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Iterator\IterConcepts.ixx">
+      <Filter>Public\Iterator</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Iterator\GetDistance.ixx">
+      <Filter>Public\Iterator</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Iterator\IncrementableTraits.ixx">
+      <Filter>Public\Iterator</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Iterator\IndirectlyCallable.ixx">
+      <Filter>Public\Iterator</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Iterator\IndirectlyMove.ixx">
+      <Filter>Public\Iterator</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Iterator\IndirectlyReadableTraits.ixx">
+      <Filter>Public\Iterator</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Iterator\IndirectlySwap.ixx">
+      <Filter>Public\Iterator</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Iterator\IteratorCategory.ixx">
+      <Filter>Public\Iterator</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Iterator\IteratorConcepts.ixx">
+      <Filter>Public\Iterator</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Iterator\IteratorTraits.ixx">
+      <Filter>Public\Iterator</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Iterator\LegacyIterators.ixx">
+      <Filter>Public\Iterator</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Iterator\MoveIterator.ixx">
+      <Filter>Public\Iterator</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Iterator\Next.ixx">
+      <Filter>Public\Iterator</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Iterator\Prev.ixx">
+      <Filter>Public\Iterator</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Iterator\Projected.ixx">
+      <Filter>Public\Iterator</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Iterator\ReverseIterator.ixx">
+      <Filter>Public\Iterator</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Memory\Allocator.ixx">
+      <Filter>Public\Memory</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\String\String.ixx">
+      <Filter>Public\String</Filter>
+    </ClCompile>
+    <ClCompile Include="Private\String\String.cxx">
+      <Filter>Private\String</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Compare.ixx">
+      <Filter>Public\Utilities</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\IO.ixx">
+      <Filter>Public</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\IO\Print.ixx">
+      <Filter>Public\IO</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Expected.ixx">
+      <Filter>Public</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Utilities\ExceptionGuard.ixx">
+      <Filter>Public\Utilities</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\TypeTraits\SwappableTraits.ixx">
+      <Filter>Public\TypeTraits</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Optional.ixx">
+      <Filter>Public</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\String\Literal.ixx">
+      <Filter>Public\String</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Ranges\RangesConcepts.ixx">
+      <Filter>Public\Ranges</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Ranges\RangeBegin.ixx">
+      <Filter>Public\Ranges</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Ranges\EnableBorrowedRange.ixx">
+      <Filter>Public\Ranges</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Functional\Function.ixx">
+      <Filter>Public\Functional</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Functional\BadFunctionCall.ixx">
+      <Filter>Public\Functional</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Ranges\RangeEnd.ixx">
+      <Filter>Public\Ranges</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Ranges\RangeUtils.ixx">
+      <Filter>Public\Ranges</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Ranges\TypeIterator.ixx">
+      <Filter>Public\Ranges</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Functional\Hash.ixx">
+      <Filter>Public\Functional</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Utilities\Piecewise.ixx">
+      <Filter>Public\Utilities</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Containers\HashDict.ixx">
+      <Filter>Public\Containers</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Functional.ixx">
+      <Filter>Public</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\String\StringSearch.ixx">
+      <Filter>Public\String</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Strings.ixx">
+      <Filter>Public</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\String\Text.ixx">
+      <Filter>Public\String</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Utilities\IsConstantEvaluated.ixx">
+      <Filter>Public\Utilities</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\String\Character.ixx">
+      <Filter>Public\String</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Memory\MemoryArena.ixx">
+      <Filter>Public\Memory</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Memory\BadAlloc.ixx">
+      <Filter>Public\Memory</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Memory\UniquePtr.ixx">
+      <Filter>Public\Memory</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\String\Unicode.ixx">
+      <Filter>Public\String</Filter>
+    </ClCompile>
+    <ClCompile Include="Private\String\Unicode.cxx">
+      <Filter>Private\String</Filter>
+    </ClCompile>
+    <ClCompile Include="Private\String\Text.cpp">
+      <Filter>Private\String</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Memory\SharedPtr.ixx">
+      <Filter>Public\Memory</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Memory\DefaultDeleter.ixx">
+      <Filter>Public\Memory</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Containers\HashTable.ixx">
+      <Filter>Public\Containers</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Utilities\Inplace.ixx">
+      <Filter>Public\Utilities</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>
