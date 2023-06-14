@@ -551,7 +551,59 @@ export namespace ne
             else if (not opt.hasValue()) return StrongOrdering::equivalent;
             else return StrongOrdering::less;
         }
+        template<class X>
+        friend constexpr bool operator==(const Optional<X>& opt, Nullopt)
+        {
+            return !opt.hasValue();
+        }
+
         template<class X, class Y>
+        friend constexpr bool operator==(const Optional<X>& lhs, const Optional<Y>& rhs)
+        {
+            if (lhs.hasValue() && rhs.hasValue()) { return lhs.value() == rhs.value(); }
+            return (!lhs.hasValue()) && (!rhs.hasValue());
+        }
+
+        template<class X, class Y>
+        friend constexpr bool operator!=(const Optional<X>& lhs, const Optional<Y>& rhs)
+        {
+            if (lhs.hasValue() && rhs.hasValue()) { return lhs.value() != rhs.value(); }
+            return (lhs.hasValue()) || (rhs.hasValue());
+        }
+
+        template<class X, class Y>
+        friend constexpr bool operator<(const Optional<X>& lhs, const Optional<Y>& rhs)
+        {
+            if (lhs.hasValue() && rhs.hasValue()) { return lhs.hasValue() < rhs.hasValue(); }
+            else if (lhs.hasValue()) { return false; }
+            else if (rhs.hasValue()) { return true; }
+            return false;
+        }
+        template<class X, class Y>
+        friend constexpr bool operator<=(const Optional<X>& lhs, const Optional<Y>& rhs)
+        {
+            if (lhs.hasValue() && rhs.hasValue()) { return lhs.hasValue() <= rhs.hasValue(); }
+            else if (lhs.hasValue()) { return false; }
+            else if (rhs.hasValue()) { return true; }
+            return true;
+        }
+        template<class X, class Y>
+        friend constexpr bool operator>(const Optional<X>& lhs, const Optional<Y>& rhs)
+        {
+            if (lhs.hasValue() && rhs.hasValue()) { return lhs.hasValue() > rhs.hasValue(); }
+            else if (lhs.hasValue()) { return true; }
+            else if (rhs.hasValue()) { return false; }
+            return false;
+        }
+        template<class X, class Y>
+        friend constexpr bool operator>=(const Optional<X>& lhs, const Optional<Y>& rhs)
+        {
+            if (lhs.hasValue() && rhs.hasValue()) { return lhs.hasValue() >= rhs.hasValue(); }
+            else if (lhs.hasValue()) { return true; }
+            else if (rhs.hasValue()) { return false; }
+            return true;
+        }
+    	template<class X, class Y>
         friend constexpr TypeCompare3Way<X, Y> operator<=>(const Optional<X>& lhs, const Optional<Y>& rhs)
         {
             if (lhs.hasValue())
@@ -577,7 +629,81 @@ export namespace ne
                 }
             }
         }
+
+
         template<class X, class Y>
+        friend constexpr bool operator==(const Optional<X>& lhs, const Y& rhs)
+        {
+            if (lhs.hasValue()) { return lhs.value() == rhs; }
+            return false;
+        }
+        template<class X, class Y>
+        friend constexpr bool operator==(const X& lhs, const Optional<Y>& rhs)
+        {
+            if (rhs.hasValue()) { return lhs == rhs.value(); }
+            return false;
+        }
+        template<class X, class Y>
+        friend constexpr bool operator!=(const Optional<X>& lhs, const Y& rhs)
+        {
+            if (lhs.hasValue()) { return lhs.value() != rhs; }
+            return true;
+        }
+        template<class X, class Y>
+        friend constexpr bool operator!=(const X& lhs, const Optional<Y>& rhs)
+        {
+            if (rhs.hasValue()) { return lhs != rhs.value(); }
+            return true;
+        }
+        template<class X, class Y>
+        friend constexpr bool operator<(const Optional<X>& lhs, const Y& rhs)
+        {
+            if (lhs.hasValue()) { return lhs.value() < rhs; }
+            return true;
+        }
+        template<class X, class Y>
+        friend constexpr bool operator<(const X& lhs, const Optional<Y>& rhs)
+        {
+            if (rhs.hasValue()) { return lhs < rhs.value(); }
+            return false;
+        }
+        template<class X, class Y>
+        friend constexpr bool operator<=(const Optional<X>& lhs, const Y& rhs)
+        {
+            if (lhs.hasValue()) { return lhs.value() <= rhs; }
+            return true;
+        }
+        template<class X, class Y>
+        friend constexpr bool operator<=(const X& lhs, const Optional<Y>& rhs)
+        {
+            if (rhs.hasValue()) { return lhs <= rhs.value(); }
+            return false;
+        }
+        template<class X, class Y>
+        friend constexpr bool operator>(const Optional<X>& lhs, const Y& rhs)
+        {
+            if (lhs.hasValue()) { return lhs.value() > rhs; }
+            return false;
+        }
+        template<class X, class Y>
+        friend constexpr bool operator>(const X& lhs, const Optional<Y>& rhs)
+        {
+            if (rhs.hasValue()) { return lhs > rhs.value(); }
+            return true;
+        }
+        template<class X, class Y>
+        friend constexpr bool operator>=(const Optional<X>& lhs, const Y& rhs)
+        {
+            if (lhs.hasValue()) { return lhs.value() >= rhs; }
+            return false;
+        }
+        template<class X, class Y>
+        friend constexpr bool operator>=(const X& lhs, const Optional<Y>& rhs)
+        {
+            if (rhs.hasValue()) { return lhs >= rhs.value(); }
+            return true;
+        }
+    	template<class X, class Y>
             requires requires (X x, Y y) { x <=> y; }
         friend constexpr TypeCompare3Way<X, Y> operator<=>(const Optional<X>& lhs, Y&& rhs)
         {
@@ -591,6 +717,9 @@ export namespace ne
             }
         }
     };
+
+    template<class X>
+    Optional(X) -> Optional<X>;
 
     template<class T>
     Optional<TypeDecay<T>> MakeOptional(T&& value)

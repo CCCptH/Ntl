@@ -94,7 +94,7 @@ namespace ne
 		void expire() override
 		{
 			auto a = allocator;
-			this->~RefCountBlock();
+			this->~RefCount();
 			allocator.deallocate(this);
 		}
 	private:
