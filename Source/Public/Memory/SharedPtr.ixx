@@ -6,6 +6,7 @@ import ntl.memory.unique_ptr;
 import ntl.type_traits;
 import ntl.utils.exception_guard;
 import ntl.memory.allocator;
+import ntl.functional.ref_wrapper;
 
 export import ntl.memory.default_deleter;
 
@@ -104,18 +105,27 @@ namespace ne
 	};
 
 	template<class Y, class T>
-	struct CompatibleTraits
+	struct TestIsCompatibleHelper
 	{
-		static constexpr bool IS_T_ARRAY = TestIsArray<T>;
-		static constexpr bool VALUE = (
-			((not IS_T_ARRAY) and TestIsConvertible<Y*, T*>) or
-			(IS_T_ARRAY and TestIsSame<TypeRemoveExtent<Y>, TypeRemoveExtent<T>>)
-			);
+		static constexpr bool VALUE = TestIsConvertible<Y*, T*>;
 	};
+	template<class Y, class T, size_t N>
+	struct TestIsCompatibleHelper<Y[N], T>
+	{
+		static constexpr bool VALUE = TestIsSame<TypeRemoveExtent<Y>, TypeRemoveExtent<TypeUnCV<T>>>;
+	};
+
+	template<class Y, class T>
+	inline constexpr bool TestIsCompatible = TestIsCompatibleHelper<Y, T>::VALUE;
 }
 
 export namespace ne
 {
+	template<class T>
+	class EnableSharedFromThis;
+	template<class T>
+	class WeakPtr;
+
 	template<class T>
 	class SharedPtr
 	{
@@ -132,15 +142,21 @@ export namespace ne
 		{}
 
 		template<class Y>
+			requires (TestIsConvertible<Y*, ElementType*>) or (TestIsBoundedArray<T> and TestIsConvertible<Y(*)[VVExtent<T>], T*>) or (TestIsUnboundedArray<T> and TestIsConvertible<Y(*)[], T*>)
 		explicit SharedPtr(Y* p) 
-			requires(TestIsConvertible<Y*, ElementType*>)
 		{
-			alloc(p, DefaultDeleter<Y>{}, Allocator{});
+			if constexpr (!TestIsArray<T>) {
+				alloc(p, DefaultDeleter<Y>{}, Allocator{});
+			}
+			else
+			{
+				alloc(p, DefaultDeleter<Y[]>{}, Allocator{});
+			}
 		}
 
 		template<class Y, class Deleter>
+			requires (TestIsConvertible<Y*, ElementType*>) or (TestIsBoundedArray<T> and TestIsConvertible<Y(*)[VVExtent<T>], T*>) or (TestIsUnboundedArray<T> and TestIsConvertible<Y(*)[], T*>)
 		SharedPtr(Y* p, Deleter&& deleter)
-			requires(TestIsConvertible<Y*, ElementType*>)
 		{
 			alloc(p, Forward<Deleter>(deleter), Allocator{});
 		}
@@ -152,8 +168,8 @@ export namespace ne
 		}
 
 		template<class Y, class Deleter>
+			requires (TestIsConvertible<Y*, ElementType*>) or (TestIsBoundedArray<T> and TestIsConvertible<Y(*)[VVExtent<T>], T*>) or (TestIsUnboundedArray<T> and TestIsConvertible<Y(*)[], T*>)
 		SharedPtr(Y* p, Deleter&& deleter, const Allocator& allocator)
-			requires(TestIsConvertible<Y*, ElementType*>)
 		{
 			alloc(p, Forward<Deleter>(deleter), allocator);
 		}
@@ -171,14 +187,15 @@ export namespace ne
 		}
 
 		template<class Y>
+			requires TestIsCompatible<Y, T>
 		SharedPtr(const SharedPtr<Y>& other) noexcept
-			requires TestIsConvertible<Y*, ElementType*>
 			: ptr(other.ptr), rc(other.rc)
 		{
 			if (rc != nullptr) rc->incRef();
 		}
 
 		template<class Y>
+			//requires TestIsCompatible<Y, T>
 		SharedPtr(const SharedPtr<Y>& r, ElementType* ptr)
 			: ptr(ptr), rc(r.rc)
 		{
@@ -193,8 +210,8 @@ export namespace ne
 		}
 
 		template<class Y>
+			requires TestIsCompatible<T, T>
 		SharedPtr(SharedPtr<Y>&& other) noexcept
-			requires TestIsConvertible<Y* , ElementType*>
 			: ptr(other.ptr), rc(other.rc)
 		{
 			other.ptr = nullptr;
@@ -203,18 +220,25 @@ export namespace ne
 
 		template<class Y>
 		SharedPtr(SharedPtr<Y>&& other, ElementType* ptr) noexcept
-			requires TestIsConvertible<Y*, ElementType*>
+			//requires TestIsConvertible<Y*, ElementType*>
 			: ptr(ptr), rc(other.rc)
 		{
 			other.ptr = nullptr;
 			other.rc = nullptr;
 		}
 
-		// TODO: WEAK_PTR? UNIQUE_PTR?
+		// TODO: WEAK_PTR? 
 		template<class U, class UD>
+			requires (not TestIsRef<UD>)
 		SharedPtr(UniquePtr<U, UD>&& unique_ptr)
-			requires TestIsConvertible<U*, ElementType*>
+			requires TestIsCompatible<U, T>
 			: SharedPtr(unique_ptr.release(), Move(unique_ptr.getDeleter()))
+		{}
+		template<class U, class UD>
+			requires (TestIsRef<UD>)
+		SharedPtr(UniquePtr<U, UD>&& unique_ptr)
+			requires TestIsCompatible<U, T>
+		: SharedPtr(unique_ptr.release(), Ref(unique_ptr.getDeleter()))
 		{}
 
 		~SharedPtr()
@@ -236,7 +260,7 @@ export namespace ne
 
 		template<class Y>
 		SharedPtr& operator=(const SharedPtr<Y>& other) noexcept
-			requires TestIsConvertible<Y*, ElementType*>
+			requires TestIsCompatible<Y, T>
 		{
 			if (rc!=other.rc)
 			{
@@ -256,7 +280,7 @@ export namespace ne
 
 		template<class Y>
 		SharedPtr& operator=(SharedPtr<Y>&& other) noexcept
-			requires TestIsConvertible<Y*, ElementType*>
+			requires TestIsCompatible<Y, T>
 		{
 			if (GetAddress(other) != this)
 			{
@@ -267,7 +291,7 @@ export namespace ne
 
 		template<class U, class UD>
 		SharedPtr operator=(UniquePtr<U, UD>&& unique_ptr)
-			requires TestIsConvertible<U*, ElementType*>
+			requires TestIsCompatible<U, T>
 		{
 			SharedPtr(Move(unique_ptr)).swap(*this);
 			return *this;
@@ -294,5 +318,81 @@ export namespace ne
 
 		ElementType* ptr;
 		RefCount* rc;
+	};
+
+	template<class T>
+	class WeakPtr
+	{
+	public:
+		using ElementType = T;
+
+		constexpr WeakPtr() noexcept
+			: ptr(nullptr), rc(nullptr)
+		{}
+
+		WeakPtr(const WeakPtr& other) noexcept
+			: ptr(other.ptr), rc(other.rc)
+		{
+			if (rc)
+			{
+				rc->incWRef();
+			}
+		}
+
+		// TODO:REQUIRES
+		template<class Y>
+		WeakPtr(const WeakPtr<Y>& other) noexcept
+			: ptr(other.ptr), rc(other.rc)
+		{
+			if (rc)
+			{
+				rc->incWRef();
+			}
+		}
+
+		// TODO:REQUIRES
+		template<class Y>
+		WeakPtr(const SharedPtr<Y>& sp) noexcept
+			: ptr(sp.ptr), rc(sp.rc)
+		{
+			if (rc)
+			{
+				rc->incWRef();
+			}
+		}
+
+		WeakPtr(WeakPtr&& other) noexcept
+			: ptr(other.ptr), rc(other.rc)
+		{
+			other.ptr = nullptr;
+			other.rc = nullptr;
+		}
+
+		// TODO:REQUIRES?
+		template<class Y>
+		WeakPtr(WeakPtr<Y>&& other) noexcept
+			: ptr(other.ptr), rc(other.rc)
+		{
+			other.ptr = nullptr;
+			other.rc = nullptr;
+		}
+
+		~WeakPtr()
+		{
+			if (rc)
+			{
+				rc->decWRef();
+			}
+		}
+
+	private:
+		ElementType* ptr;
+		RefCount* rc;
+	};
+
+	template<class T>
+	class EnableSharedFromThis
+	{
+		
 	};
 }
