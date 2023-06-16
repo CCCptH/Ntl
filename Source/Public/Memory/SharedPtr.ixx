@@ -339,8 +339,8 @@ export namespace ne
 			}
 		}
 
-		// TODO:REQUIRES
 		template<class Y>
+			requires TestIsCompatible<Y, T>
 		WeakPtr(const WeakPtr<Y>& other) noexcept
 			: ptr(other.ptr), rc(other.rc)
 		{
@@ -350,8 +350,8 @@ export namespace ne
 			}
 		}
 
-		// TODO:REQUIRES
-		template<class Y>
+		template <class Y>
+			requires TestIsCompatible<Y, T>
 		WeakPtr(const SharedPtr<Y>& sp) noexcept
 			: ptr(sp.ptr), rc(sp.rc)
 		{
@@ -368,8 +368,8 @@ export namespace ne
 			other.rc = nullptr;
 		}
 
-		// TODO:REQUIRES?
 		template<class Y>
+			requires TestIsCompatible<Y, T>
 		WeakPtr(WeakPtr<Y>&& other) noexcept
 			: ptr(other.ptr), rc(other.rc)
 		{
