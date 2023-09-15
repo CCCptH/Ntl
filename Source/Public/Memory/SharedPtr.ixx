@@ -304,20 +304,27 @@ export namespace ne
 		}
 
 	private:
+		template<class A, class B>
+		void enableSharedFromThis(RefCount* ref_count, A* maybe_enable_shared, B* value);
+
 		template<class U, class D>
 		void alloc(U p, D d, Allocator a)
 		{
+			ExceptionGuard gurad([=]() { d(p); });
 			auto prc = a.allocate<RefCountAllocator<U, D>>();
-			ExceptionGuard gurad([=]() { a.deallocate(ptr); });
 			Construct(prc, p, Move(d), Move(a));
 			rc = prc;
 			ptr = p;
 			gurad.complete();
-			// TODO: ENABLE_SHARED_FROM_THIS?
+
+
 		}
 
 		ElementType* ptr;
 		RefCount* rc;
+
+		template<class Z>
+		friend class WeakPtr;
 	};
 
 	template<class T>
@@ -385,6 +392,80 @@ export namespace ne
 			}
 		}
 
+		WeakPtr& operator=(const WeakPtr& other) noexcept
+		{
+			WeakPtr(other).swap(*this);
+			return *this;
+		}
+		template<class Y>
+			requires TestIsCompatible<Y, T>
+		WeakPtr& operator=(const WeakPtr<Y>& other) noexcept
+		{
+			WeakPtr(other).swap(*this);
+			return *this;
+		}
+
+		template<class Y>
+			requires TestIsCompatible<Y, T>
+		WeakPtr& operator=(const SharedPtr<Y>& other) noexcept {
+			WeakPtr(other).swap(*this);
+			return *this;
+		}
+
+		WeakPtr& operator=(WeakPtr&& other) noexcept
+		{
+			WeakPtr(Move(other)).swap(*this);
+			return *this;
+		}
+
+		template<class Y>
+			requires TestIsCompatible<Y,T>
+		WeakPtr& operator=(WeakPtr<Y>&& other) noexcept
+		{
+			WeakPtr(Move(other)).swap(*this);
+			return *this;
+		}
+
+		void swap(WeakPtr& other) noexcept
+		{
+			utils::Swap(ptr, other.ptr);
+			utils::Swap(rc, other.rc);
+		}
+
+		friend void Swap(WeakPtr& a, WeakPtr& b)
+		{
+			a.swap(b);
+		}
+
+		void reset()
+		{
+			if (rc) { rc->decWRef(); }
+			ptr = nullptr;
+			rc = nullptr;
+		}
+
+		int64 useCount() const
+		{
+			return rc ? rc->useCount() : 0;
+		}
+
+		bool expired() const
+		{
+			return (!rc || rc->useCount() == 0);
+		}
+
+		SharedPtr<T> lock() const noexcept
+		{
+			if (rc)
+			{
+				SharedPtr<T> temp;
+				temp.rc = rc->lock();
+				temp.ptr = ptr;
+				return temp;
+			}
+			return nullptr;
+		}
+
 	private:
 		ElementType* ptr;
 		RefCount* rc;
@@ -393,6 +474,48 @@ export namespace ne
 	template<class T>
 	class EnableSharedFromThis
 	{
-		
+	public:
+		SharedPtr<T> sharedFromThis()
+		{
+			return SharedPtr<T>(weak);
+		}
+		SharedPtr<const T> sharedFromThis() const
+		{
+			return SharedPtr<const T>(weak);
+		}
+		WeakPtr<T> weakFromThis()
+		{
+			return weak;
+		}
+		WeakPtr<const T> weakFromThis() const
+		{
+			return weak;
+		}
+	protected:
+		template<class T> friend class SharedPtr;
+		constexpr EnableSharedFromThis()noexcept = default;
+		EnableSharedFromThis(const EnableSharedFromThis&) noexcept = default;
+		EnableSharedFromThis& operator=(const EnableSharedFromThis&) noexcept
+		{
+			return *this;
+		}
+		~EnableSharedFromThis() = default;
+	private:
+		mutable WeakPtr<T> weak;
 	};
+
+	template <class T>
+	template <class A, class B>
+	void SharedPtr<T>::enableSharedFromThis(RefCount* ref_count, A* maybe_enable_shared, B* value)
+	{
+		if constexpr (TestIsBaseOf<EnableSharedFromThis<T>, A>)
+		{
+			EnableSharedFromThis<T>* es = maybe_enable_shared;
+			es->weak.ptr = value;
+			if (es->weak.rc) es->weak.rc->decWRef();
+			es->weak.rc = ref_count;
+			if (es->weak.rc) es->weak.rc->incWRef();
+		}
+	}
+
 }
