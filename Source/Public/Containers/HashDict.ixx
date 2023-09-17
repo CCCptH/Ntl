@@ -42,13 +42,14 @@ export namespace ne
     private:
         using BaseType = HashTable<ValueType, DefaultKeyValueExtractor, Hasher, KeyEqual, false>;
     public:
+        using BaseType::BaseType;
         using Iterator = typename BaseType::Iterator;
         using ConstIterator = typename BaseType::ConstIterator;
         //using LocalIterator = HashTableIterator<ThisType>;
         //using ConstLocalIter = HashTableConstIter<ThisType>;
         using InsertResult = typename BaseType::InsertResult;
 
-        using BaseType::BaseType;
+        ~HashDict();
 
         /**
          * @brief Emplace key value with args.
@@ -173,7 +174,11 @@ export namespace ne
         auto operator[](KeyType&& key)->MappedType& 
             requires TestIsDefaultConstructible<HashDict<Key, Value, HashType, KeyEqualType>::MappedType>;
 
+        void swap(ThisType& other);
+        friend void Swap(ThisType& a, ThisType& b);
 
+        SizeType count(const Key& key) const noexcept;
+        bool contains(const Key& key) const noexcept;
     };
 }
 
@@ -411,5 +416,27 @@ namespace ne
             return fp->value.value;
         }
     }
-    
+
+    template <class Key, class Value, class HashType, class KeyEqualType>
+    void HashDict<Key, Value, HashType, KeyEqualType>::swap(ThisType& other)
+    {
+        BaseType::swap(other);
+    }
+    template <class Key, class Value, class HashType, class KeyEqualType>
+    void Swap(HashDict<Key, Value, HashType, KeyEqualType>& a, HashDict<Key, Value, HashType, KeyEqualType>& b)
+    {
+        a.swap(b);
+    }
+
+    template<class Key, class Value, class HashType, class KeyEqualType>
+    auto HashDict<Key, Value, HashType, KeyEqualType>::contains(const Key& key) const noexcept-> bool
+    {
+        return find(key) != end();
+    }
+    template<class Key, class Value, class HashType, class KeyEqualType>
+    auto HashDict<Key, Value, HashType, KeyEqualType>::count(const Key& key) const noexcept-> SizeType
+    {
+        return contains(key) ? 1 : 0;
+    }
+
 }

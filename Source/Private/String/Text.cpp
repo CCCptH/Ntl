@@ -181,7 +181,7 @@ namespace ne
 		else
 		{
 			internal = Ti::Fork(text.internal, allocator);
-			text.internal == nullptr;
+			text.internal = nullptr;
 		}
 	}
 	Text::Text(const utf32* str, const Allocator& allocator)

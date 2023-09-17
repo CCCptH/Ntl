@@ -239,17 +239,18 @@ export namespace ne
         float max_load_factor;
         // its next points to the first node; 
         BaseNode sentinel;
+        /**
+         * S->A(1)->B(1)->C(0)->D(2)
+         *
+         *  Bucket:  0(B)   1(S)   2(C)   
+         *            |      |      |
+         *            C      A      D
+         *                   B
+         */
         BucketList<ThisType> bucket_list;
 
-
-        SizeType getSuitableBucketCount(SizeType elem_num) const noexcept
+        static SizeType SelectPrime(SizeType target_num)
         {
-            auto should_contained = max_load_factor * bucket_list.count;
-            if (elem_num<=should_contained && bucket_list.count !=0)
-            {
-                return bucket_list.count;
-            }
-            // Delete some primes to avoid frequent rehash
             static constexpr HashValue PRIME_LIST[] = {
                 7, 17,
                 37, 61,
@@ -292,9 +293,7 @@ export namespace ne
                 3238918481, //3504151727, 3791104843, 4101556399,
                 4294967291
             };
-            constexpr SizeType PRIME_LEN = sizeof(PRIME_LIST)/sizeof(HashValue);
-
-            SizeType target_num = (static_cast<float>(elem_num)/max_load_factor);
+            constexpr SizeType PRIME_LEN = sizeof(PRIME_LIST) / sizeof(HashValue);
 
             if (target_num < PRIME_LIST[0])
             {
@@ -305,26 +304,38 @@ export namespace ne
                 return PRIME_LIST[PRIME_LEN - 1];
             }
 
-            SizeType left = 1;
-            SizeType right = PRIME_LEN - 1;
-            SizeType mid = 0;
-            while (left <= right)
+            SizeType left = 0;
+            SizeType right = PRIME_LEN;
+            while (left < right)
             {
-                mid = (left + right) / 2;
-                if (PRIME_LIST[mid - 1] < target_num && target_num <= PRIME_LIST[mid])
+                SizeType mid = (left + right) / 2;
+                if (target_num == PRIME_LIST[mid])
                 {
-                    break;
+                    return PRIME_LIST[mid];
                 }
-                else if (elem_num <= PRIME_LIST[mid - 1])
+                else if (target_num < PRIME_LIST[mid])
                 {
-                    right = mid - 1;
+                    right = mid;
                 }
                 else
                 {
                     left = mid + 1;
                 }
             }
-            return PRIME_LIST[mid];
+            return PRIME_LIST[left];
+        }
+
+        SizeType getSuitableBucketCount(SizeType elem_num) const noexcept
+        {
+            auto should_contained = max_load_factor * bucket_list.count;
+            if (elem_num<=should_contained && bucket_list.count !=0)
+            {
+                return bucket_list.count;
+            }
+
+            const SizeType target_num = (static_cast<float>(elem_num)/max_load_factor);
+
+            return SelectPrime(target_num);
 
         }
 
@@ -386,7 +397,7 @@ export namespace ne
             calNodeHash(np);
         }
 
-
+        // attach C at A : A->B ==> A->C->B
         void attachNode(BaseNode* at, Node* target)
         {
             target->next = at->next;
@@ -495,7 +506,8 @@ export namespace ne
         {
             return modHash(hasher(key));
         }
-        HashValue hash(const Node* node) const
+        // hash value % bucket count
+    	HashValue hash(const Node* node) const
         {
             return hash(getNodeKey(node));
         }
@@ -581,6 +593,45 @@ export namespace ne
             initSentinel();
         }
 
+        explicit
+        HashTable(const Hasher& custom_hash, const KeyEqual& custom_key_equal = KeyEqual(), const Allocator& alloc = Allocator())
+	        : hasher(custom_hash)
+    		, extractor()
+    		, key_equal(custom_key_equal)
+    		, sz()
+    		, allocator(alloc)
+			, max_load_factor(DEFAULT_MAX_LOAD_FACTOR)
+			, bucket_list(nullptr, 0)
+        {
+            initSentinel();
+        }
+
+        HashTable(const Hasher& custom_hash, const Allocator& alloc)
+	        : HashTable(custom_hash, KeyEqual(), alloc)
+        {}
+
+        explicit 
+        HashTable(const KeyEqual& custom_key_equal, const Allocator& alloc = Allocator())
+            : HashTable(Hasher(), custom_key_equal, alloc)
+        {}
+
+        explicit 
+    	HashTable(SizeType bucket_count, const Hasher& custom_hash = Hasher(), const KeyEqual& custom_key_equal = KeyEqual(), const Allocator& alloc=Allocator())
+	        : hasher(custom_hash)
+			, extractor()
+			, key_equal(custom_key_equal)
+			, sz()
+			, allocator(alloc)
+			, max_load_factor(DEFAULT_MAX_LOAD_FACTOR)
+        {
+            bucket_list = NewBucketList<ThisType>(allocator, bucket_count);
+            initSentinel();
+        }
+
+    	HashTable(SizeType bucket_count, const KeyEqual& custom_key_equal, const Allocator& alloc=Allocator())
+            : HashTable(bucket_count, Hasher(), custom_key_equal, alloc)
+        {}
+
         explicit 
         HashTable(const Allocator& allocator)
             : hasher()
@@ -594,6 +645,10 @@ export namespace ne
             initSentinel();
         }
 
+        HashTable(SizeType bucket_count, const Allocator& alloc)
+            : HashTable(bucket_count, Hasher(), KeyEqual(), alloc)
+        {}
+
         HashTable(const HashTable& ht)
             : hasher(ht.hasher)
             , extractor(ht.extractor)
@@ -603,7 +658,7 @@ export namespace ne
             , max_load_factor(ht.max_load_factor)
         {
             initSentinel();
-            bucket_list = NewBucketList(allocator, ht.bucket_list.count);
+            bucket_list = NewBucketList<ThisType>(allocator, ht.bucket_list.count);
             // TODO:OPTIMIZATION
             auto ptr = ht.sentinel->next;
             while(ptr!=nullptr)
@@ -625,7 +680,7 @@ export namespace ne
             , max_load_factor(ht.max_load_factor)
         {
             initSentinel();
-            bucket_list = NewBucketList(allocator, ht.bucket_list.count);
+            bucket_list = NewBucketList<ThisType>(allocator, ht.bucket_list.count);
             // TODO:OPTIMIZATION
             auto ptr = ht.sentinel->next;
             while (ptr != nullptr)
@@ -673,7 +728,7 @@ export namespace ne
             {
                 this->allocator = allocator;
                 initSentinel();
-                bucket_list = NewBucketList(allocator, ht.bucket_list.count);
+                bucket_list = NewBucketList<ThisType>(allocator, ht.bucket_list.count);
                 // TODO:OPTIMIZATION
                 auto ptr = ht.sentinel->next;
                 while (ptr != nullptr)
