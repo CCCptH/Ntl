@@ -9,15 +9,15 @@ import ntl.concepts.core_language;
 
 export namespace ne
 {
-    template<class T>
-    constexpr
-    void Swap(T& a, T& b)
-        noexcept
-    {
-        T temp = Move(b);
-        b = Move(a);
-        a = Move(temp);
-    }
+    //template<class T>
+    //constexpr
+    //void Swap(T& a, T& b)
+    //    noexcept
+    //{
+    //    T temp = Move(b);
+    //    b = Move(a);
+    //    a = Move(temp);
+    //}
 }
 
 namespace ne::utils
@@ -62,6 +62,11 @@ namespace ne::utils
                 Swap(Forward<A>(a), Forward<B>(b));
             }
 
+            template<ConceptExchangeable T>
+            constexpr void operator()(T& a, T& b) const {
+                b = Exchange(a, Move(b));
+            }
+
             template<class A, class B, size_t N>
             requires ConceptSwappableArrays<A, B, N>
             constexpr void operator()(A(&a)[N], B(&b)[N]) const
@@ -71,11 +76,6 @@ namespace ne::utils
                 for(size_t i=0; i<N; ++i) {
                     (*this)(a[i], b[i]);
                 }
-            }
-
-            template<ConceptExchangeable T>
-            constexpr void operator()(T& a, T&b) const {
-                b = Exchange(a, Move(b));
             }
         };
 

@@ -16,7 +16,7 @@ export namespace ne {
     template<class A, class B=A>
         requires TestIsMoveConstructible<A> and TestIsAssignable<A&,B>
     constexpr
-    A Exchange(A& obj, B&& new_value)
+    decltype(auto) Exchange(A& obj, B&& new_value)
     noexcept(TestIsNothrowMoveConstructible<A> && TestIsNothrowAssignable<A&, B>)
     {
         A old = Move(obj);

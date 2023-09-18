@@ -2,6 +2,7 @@ export module ntl.functional.invoke;
 import ntl.type_traits;
 import ntl.utils.forward;
 import ntl.utils.declval;
+import ntl.utils.get_address;
 
 namespace ne {
     template<class A>

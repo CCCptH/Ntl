@@ -2,6 +2,7 @@ export module ntl.optional;
 export import ntl.utils.inplace;
 import ntl.utils;
 import ntl.type_traits;
+import ntl.concepts.swappable;
 import ntl.type_traits.type_modifications;
 import ntl.memory.allocator;
 import ntl.functional.invoke;
@@ -87,6 +88,7 @@ export namespace ne
             if (o.has_value)
             {
                 Construct(ptr(), Move(*o.ptr()));
+                o.has_value = false;
             }
         }
 
@@ -126,7 +128,8 @@ export namespace ne
         {
             if (has_value)
             {
-                Construct(ptr(), *o.ptr());
+                Construct(ptr(), Move(*o.ptr()));
+                o.has_value = false; 
             }
         }
 
@@ -158,7 +161,10 @@ export namespace ne
 
         constexpr Optional& operator=(Nullopt) noexcept
         {
-            has_value = false;
+            if (has_value) {
+                Destruct(ptr());
+                has_value = false;
+            }
             return *this;
         }
 
@@ -207,6 +213,7 @@ export namespace ne
                 if (opt.has_value)
                 {
                     (*ptr()) = Move((*opt.ptr()));
+                    opt.has_value = false;
                 }
                 else
                 {
@@ -220,6 +227,7 @@ export namespace ne
                 {
                     Construct(ptr(), Move(*(opt.ptr())));
                     has_value = true;
+                    opt.has_value = false;
                 }
             }
             return *this;
@@ -312,6 +320,7 @@ export namespace ne
                 if (opt.has_value)
                 {
                     (*ptr()) = Move(*opt.ptr());
+                    opt.has_value = false;
                 }
                 else
                 {
@@ -325,6 +334,7 @@ export namespace ne
                 {
                     Construct(ptr(), Move(*opt.ptr()));
                     has_value = true;
+                    opt.has_value = false;
                 }
             }
             return *this;
@@ -363,8 +373,6 @@ export namespace ne
 
         constexpr T& value() noexcept
         {
-            // TODO: in stl, if no value, throw an exception
-            //Assert(has_value, "[ntl.optional] Optional does not contain a value");
             if (!has_value)
             {
                 throw BadOptionalAccess{ "[ntl.optional] Optional does not contain a value" };
@@ -373,7 +381,6 @@ export namespace ne
         }
         constexpr const T& value() const noexcept
         {
-            // TODO: in stl, if no value, throw an exception
             if (!has_value)
             {
                 throw BadOptionalAccess{ "[ntl.optional] Optional does not contain a value" };
@@ -489,7 +496,7 @@ export namespace ne
 
         constexpr void swap(Optional& opt)
 			noexcept(TestIsNothrowMoveConstructible<T> and TestIsNothrowSwappable<T>)
-			requires (TestIsSwappable<T> and TestIsMoveConstructible<T>)
+			requires (ConceptSwappable<T> and TestIsMoveConstructible<T>)
     	{
 	        if (hasValue())
 	        {
