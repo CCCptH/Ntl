@@ -762,7 +762,8 @@ export namespace ne
                 destroyNode(tmp);
             }
             initSentinel();
-            SetBucketList(bucket_list);
+            DestroyBucketList(allocator, bucket_list);
+            //SetBucketList(bucket_list);
         }
 
         SizeType size() const noexcept { return sz; }

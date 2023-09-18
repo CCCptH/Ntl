@@ -1,11 +1,14 @@
 export module ntl.containers.hash_dict;
 import ntl.containers.hash_table;
 import ntl.containers.key_value;
+import ntl.memory.allocator;
 import ntl.utils;
 import ntl.tuple;
 import ntl.functional.hash;
 import ntl.type_traits;
 import ntl.exceptions;
+import ntl.iterator;
+import ntl.utils.exception_guard;
 
 namespace ne
 {
@@ -18,6 +21,12 @@ namespace ne
             return a == b;
 		}
 	};
+
+    class KeyDuplicated: public LogicError
+    {
+    public:
+        using LogicError::LogicError;
+    };
 }
 
 export namespace ne
@@ -49,6 +58,16 @@ export namespace ne
         //using ConstLocalIter = HashTableConstIter<ThisType>;
         using InsertResult = typename BaseType::InsertResult;
 
+        template<ConceptInputIterator It>
+        HashDict(It first, It last, const Allocator& alloc = Allocator());
+        template<ConceptInputIterator It>
+        HashDict(It first, It last, const Hasher& hash, const Allocator& alloc = Allocator());
+        template<ConceptInputIterator It>
+        HashDict(It first, It last, const KeyEqual& key_equal, const Allocator& alloc = Allocator());
+        template<ConceptInputIterator It>
+        HashDict(It first, It last, const Hasher& hash, const KeyEqual& key_equal, const Allocator& alloc = Allocator());
+        template<ConceptInputIterator It>
+        HashDict(It first, It last, SizeType bucket_count, const Hasher& hash = Hasher(), const KeyEqual& key_equal = KeyEqual(), const Allocator& alloc = Allocator());
         ~HashDict();
 
         /**
@@ -438,5 +457,60 @@ namespace ne
     {
         return contains(key) ? 1 : 0;
     }
+
+    template <class Key, class Value, class HashType, class KeyEqualType>
+    template <ConceptInputIterator It>
+    HashDict<Key, Value, HashType, KeyEqualType>::HashDict(
+        It first, 
+        It last, 
+        SizeType bucket_count,
+        const Hasher& hash,
+        const KeyEqual& key_equal, 
+        const Allocator& alloc)
+	    : BaseType(bucket_count, hash, key_equal, alloc)
+    {
+        for(;first!=last;++first)
+        {
+            const auto& [k, v] = *first;
+            if(!tryEmplace(k, v))
+            {
+                clear();
+                throw KeyDuplicated("[ntl.containers.hash_dict] Key duplicated");
+            }
+        }
+    }
+
+    template <class Key, class Value, class HashType, class KeyEqualType>
+    template <ConceptInputIterator It>
+    HashDict<Key, Value, HashType, KeyEqualType>::HashDict(It first, It last, const Allocator& alloc)
+	    : HashDict(first, last, (ConceptRandomAccessIterator<It> ? BaseType::SelectPrime(last-first) : BaseType::SelectPrime(2)), HashType(), KeyEqualType(), alloc)
+	{}
+
+    template <class Key, class Value, class HashType, class KeyEqualType>
+    template <ConceptInputIterator It>
+    HashDict<Key, Value, HashType, KeyEqualType>::HashDict(It first, It last, const KeyEqual& key_equal, const Allocator& alloc)
+        : HashDict(first, last, (ConceptRandomAccessIterator<It> ? BaseType::SelectPrime(last - first) : BaseType::SelectPrime(2)), HashType(), key_equal, alloc)
+    {}
+
+    template <class Key, class Value, class HashType, class KeyEqualType>
+    template <ConceptInputIterator It>
+    HashDict<Key, Value, HashType, KeyEqualType>::HashDict(It first, It last, const Hasher& hash, const KeyEqual& key_equal, const Allocator& alloc)
+        : HashDict(first, last, (ConceptRandomAccessIterator<It> ? BaseType::SelectPrime(last - first) : BaseType::SelectPrime(2)), hash, key_equal, alloc)
+    {}
+
+    template <class Key, class Value, class HashType, class KeyEqualType>
+    template <ConceptInputIterator It>
+    HashDict<Key, Value, HashType, KeyEqualType>::HashDict(It first, It last, const Hasher& hash, const Allocator& alloc)
+        : HashDict(first, last, (ConceptRandomAccessIterator<It> ? BaseType::SelectPrime(last - first) : BaseType::SelectPrime(2)), hash, KeyEqual(), alloc)
+    {}
+
+
+
+    template <class Key, class Value, class HashType, class KeyEqualType>
+    HashDict<Key, Value, HashType, KeyEqualType>::~HashDict()
+    {
+        BaseType::~BaseType();
+    }
+
 
 }
