@@ -531,8 +531,19 @@ namespace ne
 
     template <class Key, class Value, class HashType, class KeyEqualType>
     HashDict<Key, Value, HashType, KeyEqualType>::HashDict(InitList<ValueType> init, SizeType bucket_count, const Hasher& hash, const KeyEqual& key_equal, const Allocator& alloc)
-	    : HashDict(init.begin(), init.end(), bucket_count, hash, key_equal, alloc)
-	{}
+	    : BaseType(bucket_count, hash, key_equal, alloc)
+	{
+        for (auto it = init.begin(); it != init.end(); ++it)
+        {
+            const auto& [k, v] = *it;
+            static_assert(TestIsConvertible<decltype(k), Key> && TestIsConvertible<decltype(v), Value>, "[ntl.containers.hash_dict] Cannot convert into target type.");
+            if (!tryEmplace(k, v))
+            {
+                clear();
+                throw KeyDuplicated("[ntl.containers.hash_dict] Key duplicated");
+            }
+        }
+    }
 
     template <class Key, class Value, class HashType, class KeyEqualType>
     HashDict<Key, Value, HashType, KeyEqualType>::HashDict(InitList<ValueType> init, SizeType bucket_count, const Hasher& hash, const Allocator& alloc)
@@ -543,7 +554,7 @@ namespace ne
     template <class Key, class Value, class HashType, class KeyEqualType>
     HashDict<Key, Value, HashType, KeyEqualType>::~HashDict()
     {
-        BaseType::~BaseType();
+        clear();
     }
 
 

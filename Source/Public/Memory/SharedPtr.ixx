@@ -20,7 +20,7 @@ export namespace ne
 	class WeakPtr;
 }
 
-namespace ne::developing
+namespace ne
 {
 	class RefCount
 	{

@@ -316,7 +316,7 @@ namespace ne
     template<class Type>
     auto DynamicArray<Type>::allocateAndSetBeginAndCap(SizeType n) -> Pointer {
         this->p_begin = allocator.template allocate<Type>(n);
-        p_cap += n;
+        p_cap = p_begin + n;
         return p_begin;
     }
 
@@ -332,7 +332,7 @@ namespace ne
     template<class Type>
         template<class It>
     void DynamicArray<Type>::moveFrom(Pointer b, It sb, It se) {
-        for (; sb!=se;++sb) {
+        for (; sb<se;++sb) {
             Construct(b, Move(*sb));
             ++b;
         }
@@ -353,19 +353,22 @@ namespace ne
 
     template<class Type>
     void DynamicArray<Type>::shiftRearward(Pointer p) {
-        // Todo: Better impl
-        for (auto ip = p_end; p != p_end; --ip) {
-            Construct(ip, Move(*(ip-1)));
-//            Destruct(ip-1);
+        auto next = p_end;
+        auto prev = p_end - 1;
+        while (next > p) {
+            Construct(next, Move(*prev));
+            Destruct(prev);
+            --next;
+            --prev;
         }
         ++p_end;
     }
 
     template<class Type>
     void DynamicArray<Type>::shiftForward(Pointer p) {
-        for(;p!=p_end;++p) {
+        for(;p<p_end;++p) {
             Construct(p-1, Move(*p));
-//            Destruct(p);
+            Destruct(p);
         }
         --p_end;
 
@@ -376,9 +379,9 @@ namespace ne
         auto new_begin = allocator.template allocate<Type>(n);
         auto diff = p_end - p_begin + 1;
         moveFrom(new_begin, p_begin, p);
-        moveFrom(new_begin+(p-p_begin), p+1, p_end);
+        moveFrom(new_begin+(p-p_begin)+1, p, p_end);
         DestructN(p_begin, diff-1);
-        allocator.template deallocate(p_begin);
+        allocator.deallocate(p_begin);
         p_begin = new_begin;
         p_end = new_begin+diff;
         p_cap = new_begin+n;
@@ -752,7 +755,7 @@ namespace ne
             throw OutOfRange{ "[ntl.containers.dynamic_array] Index is out of range" };
         }
         Destruct(iter);
-        shiftForward(iter);
+        shiftForward(iter++);
     }
 
     template<class Type>
