@@ -353,6 +353,9 @@
     <ClCompile Include="Public\Utilities\Inplace.ixx">
       <Filter>Public\Utilities</Filter>
     </ClCompile>
+    <ClCompile Include="Public\Containers\HashSet.ixx">
+      <Filter>Public\Containers</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\README.md" />

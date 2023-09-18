@@ -33,6 +33,7 @@
     <ClCompile Include="Public\Containers\Array.ixx" />
     <ClCompile Include="Public\Containers\DynamicArray.ixx" />
     <ClCompile Include="Public\Containers\HashDict.ixx" />
+    <ClCompile Include="Public\Containers\HashSet.ixx" />
     <ClCompile Include="Public\Containers\HashTable.ixx" />
     <ClCompile Include="Public\Containers\KeyValue.ixx" />
     <ClCompile Include="Public\Containers\List.ixx" />
