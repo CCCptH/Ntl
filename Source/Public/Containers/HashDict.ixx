@@ -68,7 +68,14 @@ export namespace ne
         HashDict(It first, It last, const Hasher& hash, const KeyEqual& key_equal, const Allocator& alloc = Allocator());
         template<ConceptInputIterator It>
         HashDict(It first, It last, SizeType bucket_count, const Hasher& hash = Hasher(), const KeyEqual& key_equal = KeyEqual(), const Allocator& alloc = Allocator());
-        ~HashDict();
+
+        HashDict(InitList<ValueType> init);
+        HashDict(InitList<ValueType> init, const Allocator& allocator);
+        HashDict(InitList<ValueType> init, SizeType bucket_count, const Hasher& hash = Hasher(), const KeyEqual& key_equal = KeyEqual(), const Allocator& alloc = Allocator());
+        HashDict(InitList<ValueType> init, SizeType bucket_count, const Hasher& hash = Hasher(), const Allocator& alloc = Allocator());
+        HashDict(InitList<ValueType> init, SizeType bucket_count, const Allocator& alloc = Allocator());
+
+    	~HashDict();
 
         /**
          * @brief Emplace key value with args.
@@ -182,10 +189,12 @@ export namespace ne
         */
         template<class M>
 			requires TestIsAssignable<typename HashDict<Key, Value, HashType, KeyEqualType>::MappedType&, M&&>
+        //requires TestIsAssignable<Value&, M&&>
         auto insertOrAssign(const KeyType& key, M&& value) -> InsertResult;
 
         template<class M>
             requires TestIsAssignable<typename HashDict<Key, Value, HashType, KeyEqualType>::MappedType&, M&&>
+                //requires TestIsAssignable<Value&, M&&>
         auto insertOrAssign(KeyType&& key, M&& value) -> InsertResult;
 
         auto operator[](const KeyType& key) ->MappedType& 
@@ -504,6 +513,31 @@ namespace ne
         : HashDict(first, last, (ConceptRandomAccessIterator<It> ? BaseType::SelectPrime(last - first) : BaseType::SelectPrime(2)), hash, KeyEqual(), alloc)
     {}
 
+    template <class Key, class Value, class HashType, class KeyEqualType>
+    HashDict<Key, Value, HashType, KeyEqualType>::HashDict(InitList<ValueType> init)
+	    : HashDict(init, BaseType::SelectPrime(init.size()), Hasher(), KeyEqual(), Allocator())
+    {}
+
+    template <class Key, class Value, class HashType, class KeyEqualType>
+    HashDict<Key, Value, HashType, KeyEqualType>::HashDict(InitList<ValueType> init, SizeType bucket_count, const Allocator& alloc)
+	    : HashDict(init, bucket_count, Hasher(), KeyEqual(), alloc)
+	{}
+
+    template <class Key, class Value, class HashType, class KeyEqualType>
+    HashDict<Key, Value, HashType, KeyEqualType>::HashDict(InitList<ValueType> init, const Allocator& allocator)
+	    : HashDict(init, BaseType::SelectPrime(init.size()), Hasher(), KeyEqual(), allocator)
+	{
+    }
+
+    template <class Key, class Value, class HashType, class KeyEqualType>
+    HashDict<Key, Value, HashType, KeyEqualType>::HashDict(InitList<ValueType> init, SizeType bucket_count, const Hasher& hash, const KeyEqual& key_equal, const Allocator& alloc)
+	    : HashDict(init.begin(), init.end(), bucket_count, hash, key_equal, alloc)
+	{}
+
+    template <class Key, class Value, class HashType, class KeyEqualType>
+    HashDict<Key, Value, HashType, KeyEqualType>::HashDict(InitList<ValueType> init, SizeType bucket_count, const Hasher& hash, const Allocator& alloc)
+	    : HashDict(init, bucket_count, hash, KeyEqual(), alloc)
+	{}
 
 
     template <class Key, class Value, class HashType, class KeyEqualType>
