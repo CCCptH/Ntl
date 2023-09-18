@@ -9,117 +9,10 @@ import ntl.exceptions;
 
 namespace ne {
     template<class DArr>
-    class DynamicArrayIterator
-    {
-    public:
-        using IteratorCategory = ne::RandomAccessIteratorCategory;
-        using ThisType = DynamicArrayIterator<DArr>;
-        using ValueType = typename DArr::ValueType;
-        using Pointer = ValueType*;
-        using Reference = ValueType&;
-        using DifferenceType = decltype(Declval<Pointer>() - Declval<Pointer>());
-    private:
-        Pointer ptr;
-    public:
-
-        DynamicArrayIterator() :ptr(nullptr) {}
-        DynamicArrayIterator(Pointer p) : ptr(p) {};
-        DynamicArrayIterator(const ThisType&) noexcept = default;
-        DynamicArrayIterator(ThisType&&) noexcept = default;
-        ~DynamicArrayIterator() = default;
-
-        ThisType& operator=(const ThisType&) noexcept = default;
-        ThisType& operator=(ThisType&&) noexcept = default;
-
-        Reference operator[](DifferenceType n) { return ptr[n]; }
-
-        Reference operator*() const noexcept { return *ptr };
-        Pointer operator->() const noexcept { return ptr; }
-        ThisType& operator++() noexcept { ++ptr; return *this; }
-        ThisType operator++(int) noexcept { auto old = *this; ++(*this); return old; }
-        ThisType& operator--() noexcept { --ptr; return *this; }
-        ThisType operator--(int) noexcept { auto old = *this; --(*this); return old; }
-
-        friend decltype(Declval<Pointer>()<=>Declval<Pointer>()) operator<=>(const ThisType& a, const ThisType& b) noexcept { return a.ptr <=> b.ptr; }
-        friend bool operator==(const ThisType& a, const ThisType& b) noexcept { return a.ptr == b.ptr; }
-
-        friend ThisType operator+(const ThisType& lhs, DifferenceType rhs) {
-            return lhs.ptr + rhs;
-        }
-        friend ThisType operator+(DifferenceType lhs, const ThisType& rhs) {
-            return lhs + rhs.ptr;
-        }
-        friend ThisType& operator+=(const ThisType& lhs, DifferenceType rhs) {
-            lhs.ptr += rhs;
-            return lhs;
-        }
-        friend ThisType operator-(const ThisType& lhs, DifferenceType rhs) {
-            return lhs.ptr - rhs;
-        }
-        friend DifferenceType operator-(const ThisType& lhs, const ThisType& rhs) {
-            return lhs.ptr - rhs.ptr;
-        }
-        friend ThisType& operator-=(const ThisType& lhs, DifferenceType rhs) {
-            lhs.ptr -= rhs;
-            return lhs;
-        }
-    };
+    class DynamicArrayIterator;
 
     template<class DArr>
-    class DynamicArrayConstIterator
-    {
-    public:
-        using ThisType = DynamicArrayConstIterator<DArr>;
-        using IteratorCategory = RandomAccessIteratorCategory;
-        using ValueType = typename DArr::ValueType;
-        using Pointer = const ValueType*;
-        using Reference = const ValueType&;
-        using DifferenceType = decltype(Declval<Pointer>() - Declval<Pointer>());
-
-        DynamicArrayConstIterator() :ptr(nullptr) {}
-        DynamicArrayConstIterator(Pointer p) : ptr(p) {};
-        DynamicArrayConstIterator(const DynamicArrayIterator& it) : ptr(it.ptr) {}
-        DynamicArrayConstIterator(const ThisType&) noexcept = default;
-        DynamicArrayConstIterator(ThisType&&) noexcept = default;
-        ~DynamicArrayConstIterator() = default;
-
-        ThisType& operator=(const ThisType&) noexcept = default;
-        ThisType& operator=(ThisType&&) noexcept = default;
-
-        Reference operator*() const noexcept { return *ptr };
-        Pointer operator->() const noexcept { return ptr; }
-        ThisType& operator++() noexcept { ++ptr; return *this; }
-        ThisType operator++(int) noexcept { auto old = *this; ++(*this); return old; }
-        ThisType& operator--() noexcept { --ptr; return *this; }
-        ThisType operator--(int) noexcept { auto old = *this; --(*this); return old; }
-
-        friend friend decltype(Declval<Pointer>() <=> Declval<Pointer>()) operator<=>(const ThisType& a, const ThisType& b) noexcept { return a.ptr <=> b.ptr; }
-        friend bool operator==(const ThisType& a, const ThisType& b) noexcept { return a.ptr == b.ptr; }
-
-        friend ThisType operator+(const ThisType& lhs, DifferenceType rhs) {
-            return lhs.ptr + rhs;
-        }
-        friend ThisType operator+(DifferenceType lhs, const ThisType& rhs) {
-            return lhs + rhs.ptr;
-        }
-        ThisType& operator+=(DifferenceType rhs) {
-            ptr += rhs;
-            return *this;
-        }
-        friend ThisType operator-(const ThisType& lhs, DifferenceType rhs) {
-            return lhs.ptr - rhs;
-        }
-        friend DifferenceType operator-(const ThisType& lhs, const ThisType& rhs) {
-            return lhs.ptr - rhs.ptr;
-        }
-        ThisType& operator-=(DifferenceType rhs) {
-            ptr -= rhs;
-            return *this;
-        }
-
-    private:
-        Pointer ptr;
-    };
+    class DynamicArrayConstIterator;
 
 }
 
@@ -412,14 +305,16 @@ export namespace ne
 
         SizeType getNewCapacity(SizeType n) const {
             constexpr SizeType lin_growth = 1024*1024;
+            [[unlikely]]
             if (n+lin_growth < n) {
                 throw OutOfRange{ "[ntl.containers.dynamic_array] Capacity if out of range" };
             }
+            [[unlikely]]
             if (n >= lin_growth) {
                 return n+lin_growth;
             }
             else {
-                return n==0 ? 1 : n*2;
+                return n==0 ? 8 : n*2;
             }
         }
 
@@ -431,6 +326,126 @@ export namespace ne
 
 namespace ne
 {
+    template<class DArr>
+    class DynamicArrayIterator
+    {
+    public:
+        using IteratorCategory = RandomAccessIteratorCategory;
+        using ThisType = DynamicArrayIterator<DArr>;
+        using ValueType = typename DArr::ValueType;
+        using Pointer = ValueType*;
+        using Reference = ValueType&;
+        using DifferenceType = decltype(Declval<Pointer>() - Declval<Pointer>());
+    private:
+        Pointer ptr;
+    public:
+
+        DynamicArrayIterator() :ptr(nullptr) {}
+        DynamicArrayIterator(Pointer p) : ptr(p) {};
+        DynamicArrayIterator(const ThisType&) noexcept = default;
+        DynamicArrayIterator(ThisType&&) noexcept = default;
+        ~DynamicArrayIterator() = default;
+
+        ThisType& operator=(const ThisType&) noexcept = default;
+        ThisType& operator=(ThisType&&) noexcept = default;
+
+        Reference operator[](DifferenceType n) { return ptr[n]; }
+
+        Reference operator*() const noexcept { return *ptr; };
+        Pointer operator->() const noexcept { return ptr; }
+        ThisType& operator++() noexcept { ++ptr; return *this; }
+        ThisType operator++(int) noexcept { auto old = *this; ++(*this); return old; }
+        ThisType& operator--() noexcept { --ptr; return *this; }
+        ThisType operator--(int) noexcept { auto old = *this; --(*this); return old; }
+
+        friend decltype(Declval<Pointer>() <=> Declval<Pointer>()) operator<=>(const ThisType& a, const ThisType& b) noexcept { return a.ptr <=> b.ptr; }
+        friend bool operator==(const ThisType& a, const ThisType& b) noexcept { return a.ptr == b.ptr; }
+
+        friend ThisType operator+(const ThisType& lhs, DifferenceType rhs) {
+            return lhs.ptr + rhs;
+        }
+        friend ThisType operator+(DifferenceType lhs, const ThisType& rhs) {
+            return lhs + rhs.ptr;
+        }
+        friend ThisType& operator+=(const ThisType& lhs, DifferenceType rhs) {
+            lhs.ptr += rhs;
+            return lhs;
+        }
+        friend ThisType operator-(const ThisType& lhs, DifferenceType rhs) {
+            return lhs.ptr - rhs;
+        }
+        friend DifferenceType operator-(const ThisType& lhs, const ThisType& rhs) {
+            return lhs.ptr - rhs.ptr;
+        }
+        friend ThisType& operator-=(const ThisType& lhs, DifferenceType rhs) {
+            lhs.ptr -= rhs;
+            return lhs;
+        }
+
+        template<class DArr>
+        friend class DynamicArrayConstIterator;
+        template<class T>
+        friend class DynamicArray;
+    };
+
+    template<class DArr>
+    class DynamicArrayConstIterator
+    {
+    public:
+        using ThisType = DynamicArrayConstIterator<DArr>;
+        using IteratorCategory = RandomAccessIteratorCategory;
+        using ValueType = typename DArr::ValueType;
+        using Pointer = const ValueType*;
+        using Reference = const ValueType&;
+        using DifferenceType = decltype(Declval<Pointer>() - Declval<Pointer>());
+
+        DynamicArrayConstIterator() :ptr(nullptr) {}
+        DynamicArrayConstIterator(Pointer p) : ptr(p) {};
+        DynamicArrayConstIterator(const DynamicArrayIterator<DArr>& it) : ptr(it.ptr) {}
+        DynamicArrayConstIterator(const ThisType&) noexcept = default;
+        DynamicArrayConstIterator(ThisType&&) noexcept = default;
+        ~DynamicArrayConstIterator() = default;
+
+        ThisType& operator=(const ThisType&) noexcept = default;
+        ThisType& operator=(ThisType&&) noexcept = default;
+
+        Reference operator*() const noexcept { return *ptr; };
+        Pointer operator->() const noexcept { return ptr; }
+        ThisType& operator++() noexcept { ++ptr; return *this; }
+        ThisType operator++(int) noexcept { auto old = *this; ++(*this); return old; }
+        ThisType& operator--() noexcept { --ptr; return *this; }
+        ThisType operator--(int) noexcept { auto old = *this; --(*this); return old; }
+
+        friend decltype(Declval<Pointer>() <=> Declval<Pointer>()) operator<=>(const ThisType& a, const ThisType& b) noexcept { return a.ptr <=> b.ptr; }
+        friend bool operator==(const ThisType& a, const ThisType& b) noexcept { return a.ptr == b.ptr; }
+
+        friend ThisType operator+(const ThisType& lhs, DifferenceType rhs) {
+            return lhs.ptr + rhs;
+        }
+        friend ThisType operator+(DifferenceType lhs, const ThisType& rhs) {
+            return lhs + rhs.ptr;
+        }
+        ThisType& operator+=(DifferenceType rhs) {
+            ptr += rhs;
+            return *this;
+        }
+        friend ThisType operator-(const ThisType& lhs, DifferenceType rhs) {
+            return lhs.ptr - rhs;
+        }
+        friend DifferenceType operator-(const ThisType& lhs, const ThisType& rhs) {
+            return lhs.ptr - rhs.ptr;
+        }
+        ThisType& operator-=(DifferenceType rhs) {
+            ptr -= rhs;
+            return *this;
+        }
+
+        template<class T>
+        friend class DynamicArray;
+
+    private:
+        Pointer ptr;
+    };
 
     template<class Type>
     auto DynamicArray<Type>::allocateAndSetBeginAndCap(SizeType n) -> Pointer {
@@ -602,8 +617,10 @@ namespace ne
 
     template<class Type>
     DynamicArray<Type>::~DynamicArray() {
-        DestructN(p_begin, this->size());
-        allocator.deallocate(p_begin);
+        if (p_begin != nullptr) {
+            DestructN(p_begin, this->size());
+            allocator.deallocate(p_begin);
+        }
     }
 
     template<class Type>
@@ -663,17 +680,17 @@ namespace ne
     template<class Type>
     template<class ...Args>
     auto DynamicArray<Type>::emplace(Iterator iter, Args &&...args) -> Iterator {
-        if (iter > p_end || iter < p_begin) {
+        if (iter.ptr > p_end || iter.ptr < p_begin) {
             throw OutOfRange{ "[ntl.containers.dynamic_array] Index is out of range" };
         }
         if (p_end != p_cap) {
-            auto pos = iter;
+            auto pos = iter.ptr;
             shiftRearward(pos);
             Construct(pos, Forward<Args>(args)...);
             return pos;
         }
         else {
-            auto diff = iter - p_begin;
+            auto diff = iter.ptr - p_begin;
             reallocAndShiftRearward(getNewCapacity(size()+1), iter);
             auto pos = p_begin+diff;
             Construct(pos, Forward<Args>(args)...);
@@ -688,7 +705,7 @@ namespace ne
             Construct(p_end, Forward<Args>(args)...);
         }
         else {
-            reallocAndResetData(getNewCapacity(size()+1));
+            reallocAndResetData(getNewCapacity(size()));
             Construct(p_end, Forward<Args>(args)...);
         }
         return *this;
@@ -787,9 +804,37 @@ namespace ne
 
     template<class Type>
     void DynamicArray<Type>::reserve(SizeType n) {
-        if (n>size()) {
-            reallocAndResetData(n);
+        auto new_begin = allocator.allocate<Type>(n);
+        auto it_new = new_begin;
+        auto it_old = p_begin;
+        if (n >= size())
+        {
+            while (it_old < p_end) {
+                Construct(it_new, Move(*it_old));
+                Destruct(it_old);
+                ++it_new;
+                ++it_old;
+            }
         }
+        else
+        {
+	        while(it_new < new_begin+n)
+	        {
+                Construct(it_new, Move(*it_old));
+                Destruct(it_old);
+                ++it_new;
+                ++it_old;
+	        }
+            while(it_old < p_end)
+            {
+                Destruct(it_old);
+                ++it_old;
+            }
+        }
+        allocator.deallocate(p_begin);
+        p_begin = new_begin;
+        p_end = new_begin + n;
+        p_cap = new_begin + n;
     }
 
     template<class Type>
@@ -807,7 +852,8 @@ namespace ne
             Construct(pos, Move(v));
         }
         else {
-            reallocAndResetData(size()+1, pos);
+            reallocAndShiftRearward(getNewCapacity(size()), pos);
+            pos = p_begin + i;
             Construct(pos, Move(v));
         }
     }
@@ -821,39 +867,46 @@ namespace ne
             Construct(pos, v);
         }
         else {
-            reallocAndResetData(size() + 1, pos);
+            reallocAndShiftRearward(getNewCapacity(size()), pos);
+            pos = p_begin + i;
             Construct(pos, v);
         }
     }
 
     template<class Type>
-    auto DynamicArray<Type>::insert(ConstIterator iter, Type &&v) -> Iterator {
-        if (iter<p_begin || iter > p_end) throw OutOfRange{ "[ntl.containers.dynamic_array] Index is out of range" };
-        if (p_end != p_cap) {
-            shiftRearward(iter);
-            Construct(iter, Move(v));
-            return iter;
-        }
-        else {
-            auto diff = iter - p_begin;
-            reallocAndShiftRearward(size()+1, iter);
-            auto pos = p_begin+diff;
-            Construct(pos, Move(v));
-            return pos;
-        }
+    auto DynamicArray<Type>::insert(ConstIterator iter, Type&& v) -> Iterator
+    {
+        [[unlikely]]
+	    if (iter < begin() || iter > end()) throw OutOfRange{"[ntl.containers.dynamic_array] Index is out of range"};
+    	auto ptr = const_cast<Pointer>(iter.ptr);
+	    if (p_end != p_cap)
+	    {
+		    shiftRearward(ptr);
+		    Construct(ptr, Move(v));
+		    return ptr;
+	    }
+	    else
+	    {
+		    auto diff = iter.ptr - p_begin;
+		    reallocAndShiftRearward(getNewCapacity(size()), ptr);
+		    auto pos = p_begin + diff;
+		    Construct(pos, Move(v));
+		    return pos;
+	    }
     }
 
     template<class Type>
     auto DynamicArray<Type>::insert(ConstIterator iter, const Type &v) -> Iterator {
-        if (iter<p_begin || iter > p_end) throw OutOfRange{ "[ntl.containers.dynamic_array] Index is out of range" };
-        if (p_end != p_cap) {
-            shiftRearward(iter);
-            Construct(iter, v);
-            return iter;
+        if (iter.ptr<p_begin || iter.ptr > p_end) throw OutOfRange{ "[ntl.containers.dynamic_array] Index is out of range" };
+        auto ptr = const_cast<Pointer>(iter.ptr);
+    	if (p_end != p_cap) {
+            shiftRearward(ptr);
+            Construct(ptr, v);
+            return ptr;
         }
         else {
-            auto diff = iter - p_begin;
-            reallocAndShiftRearward(size()+1, iter);
+            auto diff = iter.ptr - p_begin;
+            reallocAndShiftRearward(getNewCapacity(size()), iter);
             auto pos = p_begin+diff;
             Construct(pos, v);
             return pos;
@@ -870,27 +923,43 @@ namespace ne
 
     template<class Type>
     auto DynamicArray<Type>::remove(ConstIterator iter) -> Iterator {
-        if (iter >= p_end or iter < p_begin) {
+        auto ptr = const_cast<Pointer>(iter.ptr);
+        [[unlikely]]
+        if (iter >= end() or iter < begin()) {
             throw OutOfRange{ "[ntl.containers.dynamic_array] Index is out of range" };
         }
-        Destruct(iter);
-        shiftForward(iter+1);
+
+        Destruct(ptr);
+        shiftForward(ptr+1);
+
+        return ptr;
     }
 
     template<class Type>
     auto DynamicArray<Type>::remove(ConstIterator first, ConstIterator last) -> Iterator {
-        if (first>p_end || first < p_begin) "out of range";
-        if (last>p_end || last < p_begin) "out of range";
-        if (first >= last) return last;
+        [[unlikely]]
+        if (first>this->end() || first < this->begin()) throw OutOfRange{ "[ntl.containers.dynamic_array] Index is out of range" };
+        [[unlikely]]
+    	if (last>this->end() || last < this->begin()) throw OutOfRange{ "[ntl.containers.dynamic_array] Index is out of range" };
+        if (first >= last) return const_cast<Pointer>(first.ptr);
         auto n = last-first;
         for (auto it = first; it != last; ++it) {
-            Destruct(it);
+            Destruct(const_cast<Pointer>(it.ptr));
         }
-        for (auto it = first; it != last; ++it) {
-            Construct(it, *(it+n));
+        //for (auto it = first; it != last; ++it) {
+        //    Construct(it, *(it+n));
+        //}
+        auto ptr = const_cast<Pointer>(first.ptr);
+        while(last != end())
+        {
+            Construct(const_cast<Pointer>(first.ptr), Move(*const_cast<Pointer>(last.ptr)));
+            Destruct(const_cast<Pointer>(last.ptr));
+            ++first;
+            ++last;
         }
+
         p_end-=n;
-        return p_end;
+        return ptr;
     }
 
     template<class Type>

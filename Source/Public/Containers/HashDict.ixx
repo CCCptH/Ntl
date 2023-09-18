@@ -552,10 +552,7 @@ namespace ne
 
 
     template <class Key, class Value, class HashType, class KeyEqualType>
-    HashDict<Key, Value, HashType, KeyEqualType>::~HashDict()
-    {
-        clear();
-    }
+    HashDict<Key, Value, HashType, KeyEqualType>::~HashDict() {}
 
 
 }
