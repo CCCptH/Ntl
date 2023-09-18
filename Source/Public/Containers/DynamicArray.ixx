@@ -1,9 +1,127 @@
 export module ntl.containers.dynamic_array;
 import ntl.iterator;
+import ntl.iterator.iterator_category;
 import ntl.type_traits;
 import ntl.utils;
 import ntl.memory.allocator;
 import ntl.exceptions;
+//import ntl.compare;
+
+namespace ne {
+    template<class DArr>
+    class DynamicArrayIterator
+    {
+    public:
+        using IteratorCategory = ne::RandomAccessIteratorCategory;
+        using ThisType = DynamicArrayIterator<DArr>;
+        using ValueType = typename DArr::ValueType;
+        using Pointer = ValueType*;
+        using Reference = ValueType&;
+        using DifferenceType = decltype(Declval<Pointer>() - Declval<Pointer>());
+    private:
+        Pointer ptr;
+    public:
+
+        DynamicArrayIterator() :ptr(nullptr) {}
+        DynamicArrayIterator(Pointer p) : ptr(p) {};
+        DynamicArrayIterator(const ThisType&) noexcept = default;
+        DynamicArrayIterator(ThisType&&) noexcept = default;
+        ~DynamicArrayIterator() = default;
+
+        ThisType& operator=(const ThisType&) noexcept = default;
+        ThisType& operator=(ThisType&&) noexcept = default;
+
+        Reference operator[](DifferenceType n) { return ptr[n]; }
+
+        Reference operator*() const noexcept { return *ptr };
+        Pointer operator->() const noexcept { return ptr; }
+        ThisType& operator++() noexcept { ++ptr; return *this; }
+        ThisType operator++(int) noexcept { auto old = *this; ++(*this); return old; }
+        ThisType& operator--() noexcept { --ptr; return *this; }
+        ThisType operator--(int) noexcept { auto old = *this; --(*this); return old; }
+
+        friend decltype(Declval<Pointer>()<=>Declval<Pointer>()) operator<=>(const ThisType& a, const ThisType& b) noexcept { return a.ptr <=> b.ptr; }
+        friend bool operator==(const ThisType& a, const ThisType& b) noexcept { return a.ptr == b.ptr; }
+
+        friend ThisType operator+(const ThisType& lhs, DifferenceType rhs) {
+            return lhs.ptr + rhs;
+        }
+        friend ThisType operator+(DifferenceType lhs, const ThisType& rhs) {
+            return lhs + rhs.ptr;
+        }
+        friend ThisType& operator+=(const ThisType& lhs, DifferenceType rhs) {
+            lhs.ptr += rhs;
+            return lhs;
+        }
+        friend ThisType operator-(const ThisType& lhs, DifferenceType rhs) {
+            return lhs.ptr - rhs;
+        }
+        friend DifferenceType operator-(const ThisType& lhs, const ThisType& rhs) {
+            return lhs.ptr - rhs.ptr;
+        }
+        friend ThisType& operator-=(const ThisType& lhs, DifferenceType rhs) {
+            lhs.ptr -= rhs;
+            return lhs;
+        }
+    };
+
+    template<class DArr>
+    class DynamicArrayConstIterator
+    {
+    public:
+        using ThisType = DynamicArrayConstIterator<DArr>;
+        using IteratorCategory = RandomAccessIteratorCategory;
+        using ValueType = typename DArr::ValueType;
+        using Pointer = const ValueType*;
+        using Reference = const ValueType&;
+        using DifferenceType = decltype(Declval<Pointer>() - Declval<Pointer>());
+
+        DynamicArrayConstIterator() :ptr(nullptr) {}
+        DynamicArrayConstIterator(Pointer p) : ptr(p) {};
+        DynamicArrayConstIterator(const DynamicArrayIterator& it) : ptr(it.ptr) {}
+        DynamicArrayConstIterator(const ThisType&) noexcept = default;
+        DynamicArrayConstIterator(ThisType&&) noexcept = default;
+        ~DynamicArrayConstIterator() = default;
+
+        ThisType& operator=(const ThisType&) noexcept = default;
+        ThisType& operator=(ThisType&&) noexcept = default;
+
+        Reference operator*() const noexcept { return *ptr };
+        Pointer operator->() const noexcept { return ptr; }
+        ThisType& operator++() noexcept { ++ptr; return *this; }
+        ThisType operator++(int) noexcept { auto old = *this; ++(*this); return old; }
+        ThisType& operator--() noexcept { --ptr; return *this; }
+        ThisType operator--(int) noexcept { auto old = *this; --(*this); return old; }
+
+        friend friend decltype(Declval<Pointer>() <=> Declval<Pointer>()) operator<=>(const ThisType& a, const ThisType& b) noexcept { return a.ptr <=> b.ptr; }
+        friend bool operator==(const ThisType& a, const ThisType& b) noexcept { return a.ptr == b.ptr; }
+
+        friend ThisType operator+(const ThisType& lhs, DifferenceType rhs) {
+            return lhs.ptr + rhs;
+        }
+        friend ThisType operator+(DifferenceType lhs, const ThisType& rhs) {
+            return lhs + rhs.ptr;
+        }
+        ThisType& operator+=(DifferenceType rhs) {
+            ptr += rhs;
+            return *this;
+        }
+        friend ThisType operator-(const ThisType& lhs, DifferenceType rhs) {
+            return lhs.ptr - rhs;
+        }
+        friend DifferenceType operator-(const ThisType& lhs, const ThisType& rhs) {
+            return lhs.ptr - rhs.ptr;
+        }
+        ThisType& operator-=(DifferenceType rhs) {
+            ptr -= rhs;
+            return *this;
+        }
+
+    private:
+        Pointer ptr;
+    };
+
+}
 
 export namespace ne
 {
@@ -18,8 +136,8 @@ export namespace ne
         using SizeType = int64;
         using Reference = Type&;
         using ConstReference = const Type&;
-        using Iterator = Pointer;
-        using ConstIterator = const Pointer;
+        using Iterator = DynamicArrayIterator<ThisType>;
+        using ConstIterator = DynamicArrayConstIterator<ThisType>;
         using ReverseIterator = ne::ReverseIterator<Iterator>;
         using ConstReverseIterator = ne::ReverseIterator<ConstIterator>;
 
@@ -313,6 +431,7 @@ export namespace ne
 
 namespace ne
 {
+
     template<class Type>
     auto DynamicArray<Type>::allocateAndSetBeginAndCap(SizeType n) -> Pointer {
         this->p_begin = allocator.template allocate<Type>(n);
@@ -755,7 +874,7 @@ namespace ne
             throw OutOfRange{ "[ntl.containers.dynamic_array] Index is out of range" };
         }
         Destruct(iter);
-        shiftForward(iter++);
+        shiftForward(iter+1);
     }
 
     template<class Type>

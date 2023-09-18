@@ -21,5 +21,9 @@ int main()
 	arr.prepend(0);
 	arr.append(1);
 	print(arr);
+	int* ptr = 0;
+	ptr = 5 + ptr;
+	arr.remove(arr.begin());
+	print(arr);
 	return 0;
 }

@@ -114,7 +114,7 @@ namespace ne
             nd_ptr = nd_ptr->next;
             return *this;
         }
-        ThisType& operator++(int) noexcept
+        ThisType operator++(int) noexcept
         {
             auto tmp = (*this);
             ++(*this);
@@ -173,7 +173,7 @@ namespace ne
             nd_ptr = nd_ptr->next;
             return *this;
         }
-        ThisType& operator++(int) noexcept
+        ThisType operator++(int) noexcept
         {
             auto tmp = (*this);
             ++(*this);
