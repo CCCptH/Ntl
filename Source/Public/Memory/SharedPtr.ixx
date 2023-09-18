@@ -10,6 +10,8 @@ import ntl.functional.ref_wrapper;
 
 export import ntl.memory.default_deleter;
 
+// TODO: UNDER DEV
+
 export namespace ne
 {
 	template<class T>
@@ -18,7 +20,7 @@ export namespace ne
 	class WeakPtr;
 }
 
-namespace ne
+namespace ne::developing
 {
 	class RefCount
 	{
