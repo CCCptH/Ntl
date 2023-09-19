@@ -766,6 +766,161 @@ export namespace ne {
             }
         }
 
+        template<class Callback>
+        constexpr auto transform(Callback&& callback)&
+        {
+            using ReturnType = TypeUnCV< TypeInvokeResult<Callback, decltype(**this)>>;
+            static_assert(TestIsCopyConstructible<E>, "[ntl.expected] Error type must be copy constructible");
+            if (hasValue())
+            {
+                if constexpr (TestIsSame<ReturnType, void>)
+                {
+                    Invoke(Forward<Callback>(callback), **this);
+                    return Expected<void, E>();
+                }
+                else
+                {
+                    return Expected<ReturnType, E>(Invoke(Forward<Callback>(callback), **this));
+                }
+            }
+            else
+            {
+                return Expected<ReturnType, E>(UNEXPECT, error());
+            }
+        }
+        template<class Callback>
+        constexpr auto transform(Callback&& callback) const&
+        {
+            using ReturnType = TypeUnCV< TypeInvokeResult<Callback, decltype(**this)>>;
+            static_assert(TestIsCopyConstructible<E>, "[ntl.expected] Error type must be copy constructible");
+            if (hasValue())
+            {
+                if constexpr (TestIsSame<ReturnType, void>)
+                {
+                    Invoke(Forward<Callback>(callback), **this);
+                    return Expected<void, E>();
+                }
+                else
+                {
+                    return Expected<ReturnType, E>(Invoke(Forward<Callback>(callback), **this));
+                }
+            }
+            else
+            {
+                return Expected<ReturnType, E>(UNEXPECT, error());
+            }
+        }
+
+        template<class Callback>
+        constexpr auto transform(Callback&& callback)&&
+        {
+            using ReturnType = TypeUnCV< TypeInvokeResult<Callback, decltype(**this)>>;
+            static_assert(TestIsMoveConstructible<E>, "[ntl.expected] Error type must be move constructible");
+            if (hasValue())
+            {
+                if constexpr (TestIsSame<ReturnType, void>)
+                {
+                    Invoke(Forward<Callback>(callback), **this);
+                    return Expected<void, E>();
+                }
+                else
+                {
+                    return Expected<ReturnType, E>(Invoke(Forward<Callback>(callback), Move(**this)));
+                }
+            }
+            else
+            {
+                return Expected<ReturnType, E>(UNEXPECT, Move(error()));
+            }
+        }
+
+        template<class Callback>
+        constexpr auto transform(Callback&& callback) const&&
+        {
+            using ReturnType = TypeUnCV< TypeInvokeResult<Callback, decltype(**this)>>;
+            static_assert(TestIsMoveConstructible<E>, "[ntl.expected] Error type must be move constructible");
+            if (hasValue())
+            {
+                if constexpr (TestIsSame<ReturnType, void>)
+                {
+                    Invoke(Forward<Callback>(callback), **this);
+                    return Expected<void, E>();
+                }
+                else
+                {
+                    return Expected<ReturnType, E>(Invoke(Forward<Callback>(callback), Move(**this)));
+                }
+            }
+            else
+            {
+                return Expected<ReturnType, E>(UNEXPECT, Move(error()));
+            }
+        }
+
+        template<class Callback>
+        constexpr auto elseTransform(Callback&& callback) &
+        {
+            using G = TypeUnCV<TypeInvokeResult<Callback, decltype(error())>>;
+            static_assert(TestIsUnexpected<G>, "[ntl.expected] Return type must be Unexpected.");
+            static_assert(TestIsConstructible<T, decltype(**this)>, "[ntl.expected] T must be copy constructible.");
+            if (hasValue())
+            {
+                return Expected<T, G>(INPLACE, **this);
+            }
+            else
+            {
+                return Expected<T, G>(Invoke(Forward<Callback>(callback), error()));
+            }
+        }
+
+        template<class Callback>
+        constexpr auto elseTransform(Callback&& callback) const &
+        {
+            using G = TypeUnCV<TypeInvokeResult<Callback, decltype(error())>>;
+            static_assert(TestIsUnexpected<G>, "[ntl.expected] Return type must be Unexpected.");
+            static_assert(TestIsConstructible<T, decltype(**this)>, "[ntl.expected] T must be copy constructible.");
+            if (hasValue())
+            {
+                return Expected<T, G>(INPLACE, **this);
+            }
+            else
+            {
+                return Expected<T, G>(Invoke(Forward<Callback>(callback), error()));
+            }
+        }
+
+        template<class Callback>
+        constexpr auto elseTransform(Callback&& callback)&&
+        {
+            using G = TypeUnCV<TypeInvokeResult<Callback, decltype(Move(error()))>>;
+            static_assert(TestIsUnexpected<G>, "[ntl.expected] Return type must be Unexpected.");
+            static_assert(TestIsConstructible<T, decltype(Move(**this))>, "[ntl.expected] T must be copy constructible.");
+            if (hasValue())
+            {
+                return Expected<T, G>(INPLACE, Move(**this));
+            }
+            else
+            {
+                return Expected<T, G>(Invoke(Forward<Callback>(callback), Move(error())));
+            }
+        }
+
+        template<class Callback>
+        constexpr auto elseTransform(Callback&& callback) const &&
+        {
+            using G = TypeUnCV<TypeInvokeResult<Callback, decltype(Move(error()))>>;
+            static_assert(TestIsUnexpected<G>, "[ntl.expected] Return type must be Unexpected.");
+            static_assert(TestIsConstructible<T, decltype(Move(**this))>, "[ntl.expected] T must be copy constructible.");
+            if (hasValue())
+            {
+                return Expected<T, G>(INPLACE, Move(**this));
+            }
+            else
+            {
+                return Expected<T, G>(Invoke(Forward<Callback>(callback), Move(error())));
+            }
+        }
+
     private:
 
         template<class T1, class T2, class...Args>
@@ -1224,6 +1379,156 @@ export namespace ne {
             else
             {
                 return Invoke(Forward<Callback>(callback), Move(this->error()));
+            }
+        }
+
+        template<class Callback>
+        constexpr auto transform(Callback&& callback)&
+        {
+            using ReturnType = TypeUnCVRef< TypeInvokeResult<Callback>>;
+            static_assert(TestIsCopyConstructible<E>, "[ntl.expected] Error type must be copy constructible");
+            if (hasValue())
+            {
+                if constexpr (TestIsSame<ReturnType, void>)
+                {
+                    Invoke(Forward<Callback>(callback));
+                    return Expected<void, E>();
+                }
+                else
+                {
+                    return Expected<ReturnType, E>(Invoke(Forward<Callback>(callback)));
+                }
+            }
+            else
+            {
+                return Expected<ReturnType, E>(UNEXPECT, error());
+            }
+        }
+        template<class Callback>
+        constexpr auto transform(Callback&& callback) const&
+        {
+            using ReturnType = TypeUnCVRef< TypeInvokeResult<Callback>>;
+            static_assert(TestIsCopyConstructible<E>, "[ntl.expected] Error type must be copy constructible");
+            if (hasValue())
+            {
+                if constexpr (TestIsSame<ReturnType, void>)
+                {
+                    Invoke(Forward<Callback>(callback));
+                    return Expected<void, E>();
+                }
+                else
+                {
+                    return Expected<ReturnType, E>(Invoke(Forward<Callback>(callback)));
+                }
+            }
+            else
+            {
+                return Expected<ReturnType, E>(UNEXPECT, error());
+            }
+        }
+
+        template<class Callback>
+        constexpr auto transform(Callback&& callback)&&
+        {
+            using ReturnType = TypeUnCVRef< TypeInvokeResult<Callback>>;
+            static_assert(TestIsMoveConstructible<E>, "[ntl.expected] Error type must be move constructible");
+            if (hasValue())
+            {
+                if constexpr (TestIsSame<ReturnType, void>)
+                {
+                    Invoke(Forward<Callback>(callback));
+                    return Expected<void, E>();
+                }
+                else
+                {
+                    return Expected<ReturnType, E>(Invoke(Forward<Callback>(callback)));
+                }
+            }
+            else
+            {
+                return Expected<ReturnType, E>(UNEXPECT, Move(error()));
+            }
+        }
+
+        template<class Callback>
+        constexpr auto transform(Callback&& callback) const&&
+        {
+            using ReturnType = TypeUnCVRef< TypeInvokeResult<Callback>>;
+            static_assert(TestIsMoveConstructible<E>, "[ntl.expected] Error type must be move constructible");
+            if (hasValue())
+            {
+                if constexpr (TestIsSame<ReturnType, void>)
+                {
+                    Invoke(Forward<Callback>(callback));
+                    return Expected<void, E>();
+                }
+                else
+                {
+                    return Expected<ReturnType, E>(Invoke(Forward<Callback>(callback)));
+                }
+            }
+            else
+            {
+                return Expected<ReturnType, E>(UNEXPECT, Move(error()));
+            }
+        }
+
+        template<class Callback>
+        constexpr auto elseTransform(Callback&& callback)&
+        {
+            using G = TypeUnCV<TypeInvokeResult<Callback, decltype(error())>>;
+            static_assert(TestIsUnexpected<G>, "[ntl.expected] Return type must be Unexpected.");
+            if (hasValue())
+            {
+                return Expected<void, G>();
+            }
+            else
+            {
+                return Expected<void, G>(Invoke(Forward<Callback>(callback), error()));
+            }
+        }
+        template<class Callback>
+        constexpr auto elseTransform(Callback&& callback) const &
+        {
+            using G = TypeUnCV<TypeInvokeResult<Callback, decltype(error())>>;
+            static_assert(TestIsUnexpected<G>, "[ntl.expected] Return type must be Unexpected.");
+            if (hasValue())
+            {
+                return Expected<void, G>();
+            }
+            else
+            {
+                return Expected<void, G>(Invoke(Forward<Callback>(callback), error()));
+            }
+        }
+
+        template<class Callback>
+        constexpr auto elseTransform(Callback&& callback) &&
+        {
+            using G = TypeUnCV<TypeInvokeResult<Callback, decltype(Move(error()))>>;
+            static_assert(TestIsUnexpected<G>, "[ntl.expected] Return type must be Unexpected.");
+            if (hasValue())
+            {
+                return Expected<void, G>();
+            }
+            else
+            {
+                return Expected<void, G>(Invoke(Forward<Callback>(callback), Move(error())));
+            }
+        }
+
+        template<class Callback>
+        constexpr auto elseTransform(Callback&& callback) const &&
+        {
+            using G = TypeUnCV<TypeInvokeResult<Callback, decltype(Move(error()))>>;
+            static_assert(TestIsUnexpected<G>, "[ntl.expected] Return type must be Unexpected.");
+            if (hasValue())
+            {
+                return Expected<void, G>();
+            }
+            else
+            {
+                return Expected<void, G>(Invoke(Forward<Callback>(callback), Move(error())));
             }
         }
     };
