@@ -24,13 +24,13 @@ export namespace ne
 namespace ne
 {
 
+    struct Nullopt {};
     template<class T>
     struct TestIsOptionalHelper: FalseConstant {};
     template<class T>
     struct TestIsOptionalHelper<Optional<T>> : TrueConstant {};
     template<class T>
     inline constexpr bool TestIsOptional = TestIsOptionalHelper<T>::VALUE;
-    struct Nullopt {};
 }
 
 export namespace ne
@@ -88,7 +88,7 @@ export namespace ne
             if (o.has_value)
             {
                 Construct(ptr(), Move(*o.ptr()));
-                o.has_value = false;
+                //o.has_value = false;
             }
         }
 
@@ -129,7 +129,7 @@ export namespace ne
             if (has_value)
             {
                 Construct(ptr(), Move(*o.ptr()));
-                o.has_value = false; 
+                //o.has_value = false; 
             }
         }
 
@@ -213,7 +213,7 @@ export namespace ne
                 if (opt.has_value)
                 {
                     (*ptr()) = Move((*opt.ptr()));
-                    opt.has_value = false;
+                    //opt.has_value = false;
                 }
                 else
                 {
@@ -227,7 +227,7 @@ export namespace ne
                 {
                     Construct(ptr(), Move(*(opt.ptr())));
                     has_value = true;
-                    opt.has_value = false;
+                    //opt.has_value = false;
                 }
             }
             return *this;
@@ -320,7 +320,7 @@ export namespace ne
                 if (opt.has_value)
                 {
                     (*ptr()) = Move(*opt.ptr());
-                    opt.has_value = false;
+                    //opt.has_value = false;
                 }
                 else
                 {
@@ -491,6 +491,82 @@ export namespace ne
             else
             {
                 return Invoke(Forward<F>(f));
+            }
+        }
+
+        template<class F>
+        constexpr auto transform(F&& f) &
+        {
+            static_assert(TestIsInvocable<F, T&>, "[ntl.optional] F must be callable with T");
+            using U = TypeUnCV<TypeInvokeResult<F, T&>>;
+            static_assert(not TestIsArray<U> and not TestIsSame<Nullopt, U> and not TestIsSame<Inplace, U>,
+                "[ntl.optional] Return value can not be array, NULLOPT or INPLACE"
+                );
+
+            if (hasValue())
+            {
+                return Optional<U>(Invoke(Forward<F>(f), **this));
+            }
+            else
+            {
+                return Optional<U>(NULLOPT);
+            }
+        }
+
+        template<class F>
+        constexpr auto transform(F&& f) const &
+        {
+            static_assert(TestIsInvocable<F, const T&>, "[ntl.optional] F must be callable with T");
+            using U = TypeUnCV<TypeInvokeResult<F, const T&>>;
+            static_assert(not TestIsArray<U> and not TestIsSame<Nullopt, U> and not TestIsSame<Inplace, U>,
+                "[ntl.optional] Return value can not be array, NULLOPT or INPLACE"
+                );
+
+            if (hasValue())
+            {
+                return Optional<U>(Invoke(Forward<F>(f), **this));
+            }
+            else
+            {
+                return Optional<U>(NULLOPT);
+            }
+        }
+
+        template<class F>
+        constexpr auto transform(F&& f) &&
+        {
+            static_assert(TestIsInvocable<F, T>, "[ntl.optional] F must be callable with T");
+            using U = TypeUnCV<TypeInvokeResult<F, T>>;
+            static_assert(not TestIsArray<U> and not TestIsSame<Nullopt, U> and not TestIsSame<Inplace, U>,
+                "[ntl.optional] Return value can not be array, NULLOPT or INPLACE"
+                );
+
+            if (hasValue())
+            {
+                return Optional<U>(Invoke(Forward<F>(f), Move(**this)));
+            }
+            else
+            {
+                return Optional<U>(NULLOPT);
+            }
+        }
+
+        template<class F>
+        constexpr auto transform(F&& f) const &&
+        {
+            static_assert(TestIsInvocable<F, const T>, "[ntl.optional] F must be callable with T");
+            using U = TypeUnCV<TypeInvokeResult<F, const T>>;
+            static_assert(not TestIsArray<U> and not TestIsSame<Nullopt, U> and not TestIsSame<Inplace, U>,
+                "[ntl.optional] Return value can not be array, NULLOPT or INPLACE"
+                );
+
+            if (hasValue())
+            {
+                return Optional<U>(Invoke(Forward<F>(f), Move(**this)));
+            }
+            else
+            {
+                return Optional<U>(NULLOPT);
             }
         }
 

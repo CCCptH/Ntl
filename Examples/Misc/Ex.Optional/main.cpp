@@ -35,9 +35,28 @@ int main()
 	print(a);
 	print(b);
 
-	b = Move(a);
 	print(a);
 	print(b);
+
+	a.then([](const Optional<int>& o)-> Optional<int>
+		{
+			cout <<"then: " << o.value() << endl;
+			return NULLOPT;
+		});
+
+	Optional<int> c = NULLOPT;
+	c.orElse([]()
+	{
+			return Optional<int>(2);
+	}).then([](Optional<long> opt)->Optional<int>
+	{
+		cout << opt.value() << endl;
+		return Optional<int>(10);
+	}).transform([](int x)
+	{
+			cout << x << endl;
+			return x;
+	});
 
 	return 0;
 }
