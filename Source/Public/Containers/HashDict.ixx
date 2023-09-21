@@ -3,6 +3,7 @@ import ntl.containers.hash_table;
 import ntl.containers.key_value;
 import ntl.memory.allocator;
 import ntl.utils;
+import ntl.utils.exception_guard;
 import ntl.tuple;
 import ntl.functional.hash;
 import ntl.type_traits;
@@ -226,7 +227,9 @@ namespace ne
             return { fp, false };
         }
         auto np = BaseType::allocateNode();
+
         BaseType:: constructAtNodeAndSetHash(np, PIECEWISE, ForwardAsTuple(key), ForwardAsTuple(Forward<Args>(args)...));
+
         BaseType::insertNode(np);
         return { np, true };
     }
@@ -241,7 +244,9 @@ namespace ne
             return { fp, false };
         }
         auto np = BaseType::allocateNode();
+
         BaseType::constructAtNodeAndSetHash(np, PIECEWISE, ForwardAsTuple(Move(key)), ForwardAsTuple(Forward<Args>(args)...));
+
         BaseType::insertNode(np);
         return { np, true };
     }
@@ -254,7 +259,9 @@ namespace ne
         if (fp==nullptr)
         {
             auto np = BaseType::allocateNode();
+
             BaseType::constructAtNodeAndSetHash(np, key, Forward<M>(value));
+
             BaseType::insertNode(np);
             return { np, true };
         }
@@ -273,7 +280,9 @@ namespace ne
         if (fp == nullptr)
         {
             auto np = BaseType::allocateNode();
+
             BaseType::constructAtNodeAndSetHash(np, Move(key), Forward<M>(value));
+
             BaseType::insertNode(np);
             return { np, true };
         }
@@ -414,7 +423,9 @@ namespace ne
         if (fp == nullptr)
         {
             auto np = BaseType::allocateNode();
+
             BaseType::constructAtNodeAndSetHash(np, key, MappedType{});
+
             BaseType::insertNode(np);
             return np->value.value;
         }
@@ -431,7 +442,9 @@ namespace ne
         if (fp == nullptr)
         {
             auto np = BaseType::allocateNode();
+
             BaseType::constructAtNodeAndSetHash(np, Move(key), MappedType{});
+
             BaseType::insertNode(np);
             return np->value.value;
         }

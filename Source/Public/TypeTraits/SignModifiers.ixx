@@ -4,6 +4,8 @@ import ntl.type_traits.primary_type_categories;
 import ntl.type_traits.operation_on_traits;
 import ntl.type_traits.type_properties;
 import ntl.type_traits.type_modifications;
+import ntl.type_traits.type_relationships;
+
 namespace ne
 {
     template <class A, class B, bool = TestIsConst<TypeUnRef<A>>,

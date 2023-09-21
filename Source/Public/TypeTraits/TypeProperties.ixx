@@ -3,7 +3,7 @@ module;
 export module ntl.type_traits.type_properties;
 import ntl.type_traits.base_classes;
 import ntl.type_traits.primary_type_categories;
-
+import ntl.utils.declval;
 namespace ne
 {
     template<class T>
@@ -110,7 +110,7 @@ namespace ne
     template<class A>
     struct TestIsScopedEnumHelper: FalseConstant{};
     template<class A>
-    requires TestIsEnumHelper<A>::VALUE
+    requires TestIsEnum<A>
     struct TestIsScopedEnumHelper<A>: BooleanConstant<TestIsScopedEnumImplHelper<A>>{};
 }
 

@@ -10,7 +10,7 @@ export namespace ne
 		MemoryArena() = default;
 		MemoryArena(const MemoryArena&) = default;
 		MemoryArena(MemoryArena&&) = default;
-		~MemoryArena() = default;
+		virtual ~MemoryArena() = default;
 
 		virtual void* alloc(size_t n, align_t align_size) = 0;
 		virtual void dealloc(void*) = 0;

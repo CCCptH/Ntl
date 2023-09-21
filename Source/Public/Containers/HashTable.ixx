@@ -2,6 +2,7 @@ export module ntl.containers.hash_table;
 import ntl.memory.allocator;
 import ntl.functional.hash;
 import ntl.utils;
+import ntl.utils.exception_guard;
 import ntl.containers.key_value;
 import ntl.iterator;
 import ntl.exceptions;
@@ -399,7 +400,9 @@ export namespace ne
         template<class ...Args>
         void constructAtNodeAndSetHash(Node* np, Args&&...args)
         {
+            ExceptionGuard g([&]() {allocator.deallocate(np); });
             constructAtNode(np, Forward<Args>(args)...);
+            g.complete();
             calNodeHash(np);
         }
 
@@ -664,8 +667,8 @@ export namespace ne
             , max_load_factor(ht.max_load_factor)
         {
             initSentinel();
+            ExceptionGuard g([&]() { clear(); });
             bucket_list = NewBucketList<ThisType>(allocator, ht.bucket_list.count);
-            // TODO:OPTIMIZATION
             auto ptr = ht.sentinel->next;
             while(ptr!=nullptr)
             {
@@ -675,6 +678,7 @@ export namespace ne
                 insertNode(np);
                 ptr = ptr->next;
             }
+            g.complete();
         }
 
         HashTable(const HashTable& ht, const Allocator& allocator)
@@ -686,8 +690,8 @@ export namespace ne
             , max_load_factor(ht.max_load_factor)
         {
             initSentinel();
+            ExceptionGuard g([&]() { clear(); });
             bucket_list = NewBucketList<ThisType>(allocator, ht.bucket_list.count);
-            // TODO:OPTIMIZATION
             auto ptr = ht.sentinel->next;
             while (ptr != nullptr)
             {
@@ -697,6 +701,7 @@ export namespace ne
                 insertNode(np);
                 ptr = ptr->next;
             }
+            g.complete();
         }
 
         HashTable(HashTable&& ht) noexcept
@@ -732,6 +737,7 @@ export namespace ne
             }
             else
             {
+                ExceptionGuard g([&]() { clear(); });
                 this->allocator = allocator;
                 initSentinel();
                 bucket_list = NewBucketList<ThisType>(allocator, ht.bucket_list.count);
@@ -745,7 +751,7 @@ export namespace ne
                     insertNode(np);
                     ptr = ptr->next;
                 }
-
+                g.complete();
                 ht.clear();
             }
         }
@@ -769,7 +775,6 @@ export namespace ne
             }
             initSentinel();
             DestroyBucketList(allocator, bucket_list);
-            //SetBucketList(bucket_list);
         }
 
         SizeType size() const noexcept { return sz; }
@@ -801,7 +806,9 @@ export namespace ne
         InsertResult emplace(Args&&...args)
         {
             auto np = allocateNode();
+            ExceptionGuard g([&]() {destroyNode(np); });
             constructAtNodeAndSetHash(np, Forward<Args>(args)...);
+            g.complete();
             auto fp = findNodeSameKey(np);
             if (fp==nullptr)
             {
