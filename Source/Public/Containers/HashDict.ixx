@@ -21,12 +21,6 @@ namespace ne
             return a == b;
 		}
 	};
-
-    class KeyDuplicated: public LogicError
-    {
-    public:
-        using LogicError::LogicError;
-    };
 }
 
 export namespace ne
@@ -51,13 +45,14 @@ export namespace ne
     private:
         using BaseType = HashTable<ValueType, DefaultKeyValueExtractor, Hasher, KeyEqual, false>;
     public:
-        using BaseType::BaseType;
         using Iterator = typename BaseType::Iterator;
         using ConstIterator = typename BaseType::ConstIterator;
         //using LocalIterator = HashTableIterator<ThisType>;
         //using ConstLocalIter = HashTableConstIter<ThisType>;
         using InsertResult = typename BaseType::InsertResult;
 
+
+        using BaseType::BaseType;
         template<ConceptInputIterator It>
         HashDict(It first, It last, const Allocator& alloc = Allocator());
         template<ConceptInputIterator It>
@@ -394,8 +389,9 @@ namespace ne
         auto np = BaseType::findNodeWithKey(key);
         if (np != nullptr) {
             BaseType::removeNode(np);
+            return 1;
         }
-        return size();
+        return 0;
     }
 
     template<class Key, class Value, class HashType, class KeyEqualType>

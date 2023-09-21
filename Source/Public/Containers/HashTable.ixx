@@ -4,6 +4,7 @@ import ntl.functional.hash;
 import ntl.utils;
 import ntl.containers.key_value;
 import ntl.iterator;
+import ntl.exceptions;
 
 namespace ne
 {
@@ -194,6 +195,11 @@ namespace ne
 }
 export namespace ne
 {
+    class KeyDuplicated : public LogicError
+    {
+    public:
+        using LogicError::LogicError;
+    };
     template<class TheKVType, template<class> typename TheExtractorType, class HasherType, class TheKeyEqual, bool MULTI_KEY>
         requires ConceptKVExtractor<TheExtractorType, TheKVType>
     class HashTable
