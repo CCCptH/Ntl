@@ -36,21 +36,21 @@ namespace ne::ranges::CpoImpl
 		template<class T>
 			requires ConceptHasMemberSize<T>
 		[[nodiscard]]
-		constexpr auto operator()(T&& t) const noexcept {
+		constexpr auto operator()(T&& t) const noexcept(noexcept(AUTO_CAST(t.size()))) {
 			return AUTO_CAST(t.size());
 		}
 
 		template<class T>
 			requires ConceptUnqualifiedSize<T>
 		[[nodiscard]]
-		constexpr auto operator()(T&& t) const noexcept {
+		constexpr auto operator()(T&& t) const noexcept(noexcept(AUTO_CAST(Size(t)))) {
 			return AUTO_CAST(Size(t));
 		}
 
 		template<class T>
 			requires ConceptForwardIterator<TypeIterator<T>> 
 		and ConceptSizedSentinelFor<TypeSentinel<T>, TypeIterator<T>>
-		constexpr int64 operator()(T&& t) const noexcept {
+		constexpr int64 operator()(T&& t) const noexcept(noexcept(static_cast<int64>(ranges::End(t) - ranges::Begin(t)))) {
 			return ranges::End(t) - ranges::Begin(t);
 		}
 
@@ -60,5 +60,7 @@ namespace ne::ranges::CpoImpl
 
 export namespace ne::ranges
 {
-
+	inline namespace Cpo {
+		inline constexpr CpoImpl::SizeCpo Size{};
+	}
 }
