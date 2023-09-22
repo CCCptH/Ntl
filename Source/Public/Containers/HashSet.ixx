@@ -141,6 +141,8 @@ export namespace ne
 		*/
 		auto size() const noexcept -> SizeType;
 
+		bool isEmpty() const noexcept;
+
 		auto begin() noexcept -> Iterator { return BaseType::begin(); }
 		auto end() noexcept -> Iterator { return BaseType::end(); }
 		auto begin() const noexcept -> ConstIterator { return BaseType::begin(); }
@@ -308,4 +310,9 @@ namespace ne
 		return BaseType::size();
 	}
 
+	template<class Key, class HashType, class KeyEqualType>
+	bool ne::HashSet<Key, HashType, KeyEqualType>::isEmpty() const noexcept
+	{
+		return BaseType::isEmpty();
+	}
 }

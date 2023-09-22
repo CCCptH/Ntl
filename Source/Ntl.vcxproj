@@ -78,12 +78,15 @@
     <ClCompile Include="Public\Monostate.ixx" />
     <ClCompile Include="Public\Ntl.ixx" />
     <ClCompile Include="Public\Optional.ixx" />
+    <ClCompile Include="Public\Ranges\RangePrimitives.ixx" />
+    <ClCompile Include="Public\Ranges\RangeProperties.ixx" />
     <ClCompile Include="Public\Ranges\RangeUtils.ixx" />
     <ClCompile Include="Public\Ranges\RangeBegin.ixx" />
     <ClCompile Include="Public\Ranges\EnableBorrowedRange.ixx" />
     <ClCompile Include="Public\Ranges\RangeEnd.ixx" />
     <ClCompile Include="Public\Ranges\RangesConcepts.ixx" />
     <ClCompile Include="Public\Ranges\TypeIterator.ixx" />
+    <ClCompile Include="Public\Ranges\TypeSentinel.ixx" />
     <ClCompile Include="Public\Strings.ixx" />
     <ClCompile Include="Public\String\Character.ixx" />
     <ClCompile Include="Public\String\Literal.ixx" />

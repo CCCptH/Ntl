@@ -5,4 +5,5 @@ export namespace ne::ranges
 {
 	template<class T>
 	using TypeIterator = decltype(ranges::Begin(Declval<T&>()));
+
 }

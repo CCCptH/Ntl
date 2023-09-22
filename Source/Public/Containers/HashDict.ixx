@@ -203,6 +203,8 @@ export namespace ne
 
         SizeType count(const Key& key) const noexcept;
         bool contains(const Key& key) const noexcept;
+
+        bool isEmpty() const noexcept;
     };
 }
 
@@ -563,5 +565,9 @@ namespace ne
     template <class Key, class Value, class HashType, class KeyEqualType>
     HashDict<Key, Value, HashType, KeyEqualType>::~HashDict() {}
 
-
+    template<class Key, class Value, class HashType, class KeyEqualType>
+    bool ne::HashDict<Key, Value, HashType, KeyEqualType>::isEmpty() const noexcept
+    {
+        return BaseType::isEmpty();
+    }
 }
