@@ -176,9 +176,6 @@
     <ClCompile Include="Public\Containers\RedBlackTree.ixx">
       <Filter>Public\Containers</Filter>
     </ClCompile>
-    <ClCompile Include="Public\Functional\IdentityEqual.ixx">
-      <Filter>Public\Functional</Filter>
-    </ClCompile>
     <ClCompile Include="Public\Functional\Invoke.ixx">
       <Filter>Public\Functional</Filter>
     </ClCompile>
@@ -370,6 +367,12 @@
     </ClCompile>
     <ClCompile Include="Public\Algorithms\Find.ixx">
       <Filter>Public\Algorithms</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Functional\Functors.ixx">
+      <Filter>Public\Functional</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Ranges\Dangling.ixx">
+      <Filter>Public\Ranges</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

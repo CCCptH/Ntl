@@ -2,7 +2,6 @@ export module ntl.iterator.concepts.alg_requirements;
 import ntl.concepts.swappable;
 import ntl.concepts.core_language;
 import ntl.concepts.object;
-import ntl.functional.identity_equal;
 import ntl.type_traits;
 import ntl.iterator.concepts.iterator_concepts;
 import ntl.iterator.indirectly_swap;

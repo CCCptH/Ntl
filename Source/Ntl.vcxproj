@@ -44,8 +44,8 @@
     <ClCompile Include="Public\Functional.ixx" />
     <ClCompile Include="Public\Functional\BadFunctionCall.ixx" />
     <ClCompile Include="Public\Functional\Function.ixx" />
+    <ClCompile Include="Public\Functional\Functors.ixx" />
     <ClCompile Include="Public\Functional\Hash.ixx" />
-    <ClCompile Include="Public\Functional\IdentityEqual.ixx" />
     <ClCompile Include="Public\Functional\Invoke.ixx" />
     <ClCompile Include="Public\Functional\RefWrapper.ixx" />
     <ClCompile Include="Public\IO.ixx" />
@@ -79,6 +79,7 @@
     <ClCompile Include="Public\Monostate.ixx" />
     <ClCompile Include="Public\Ntl.ixx" />
     <ClCompile Include="Public\Optional.ixx" />
+    <ClCompile Include="Public\Ranges\Dangling.ixx" />
     <ClCompile Include="Public\Ranges\RangePrimitives.ixx" />
     <ClCompile Include="Public\Ranges\RangeProperties.ixx" />
     <ClCompile Include="Public\Ranges\RangeUtils.ixx" />

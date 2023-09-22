@@ -6,5 +6,5 @@ export namespace ne {
     struct ForwardIteratorCategory:  InputIteratorCategory{};
     struct BidirectionalIteratorCategory: ForwardIteratorCategory{};
     struct RandomAccessIteratorCategory: BidirectionalIteratorCategory{};
-    struct ContiguousIteratorCategory: RandomAccessIteratorCategory{};
+    struct ContinguousIteratorCategory: RandomAccessIteratorCategory{};
 }

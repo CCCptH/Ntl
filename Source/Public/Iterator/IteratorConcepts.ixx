@@ -128,7 +128,7 @@ export namespace ne {
     };
 
     template<class I>
-    concept ConceptContiguousIterator = ConceptRandomAccessIterator<I> && ConceptDeriveFrom<details::TypeIteratorConcept<I>, ContiguousIteratorCategory>
+    concept ConceptContinguousIterator = ConceptRandomAccessIterator<I> && ConceptDeriveFrom<details::TypeIteratorConcept<I>, ContinguousIteratorCategory>
     && TestIsLRef<TypeIteratorDifference<I>> && ConceptSameAs<TypeIteratorValue<I>, TypeUnCVRef<TypeIteratorReference<I>>> &&
     requires (const I& i) {
         {GetAddress(i)} -> ConceptSameAs<TypeAddPointer<TypeIteratorReference<I>>>;

@@ -132,7 +132,7 @@ export namespace ne
         using ValueType = TypeUnCV<Ptr>;
         using Pointer = Ptr*;
         using Reference = Ptr&;
-        using IteratorCategory = ContiguousIteratorCategory;
+        using IteratorCategory = ContinguousIteratorCategory;
         using __Primary = IteratorTraits;
     };
 

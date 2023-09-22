@@ -56,11 +56,56 @@ namespace ne::ranges::CpoImpl
 
 		void operator()(auto&&) = delete;
 	};
+
 }
 
 export namespace ne::ranges
 {
 	inline namespace Cpo {
 		inline constexpr CpoImpl::SizeCpo Size{};
+	}
+}
+
+namespace ne::ranges::CpoImpl
+{
+	template<class T>
+	concept ConceptHasMemberIsEmpty = requires (T && t) {
+		{ t.isEmpty() } -> ConceptBooleanTestable;
+	};
+
+	template<class T>
+	concept ConceptCanIsEmptyBySize = (!ConceptHasMemberIsEmpty<T>) && requires (T && t) {
+		ranges::Size(Forward<T>(t)) == 0;
+	};
+
+	template<class T>
+	concept ConceptCanIsEmptyByBE = (!ConceptHasMemberIsEmpty<T>) and (!ConceptCanIsEmptyBySize<T>) and requires (T && t) {
+		{ranges::Begin(t) == ranges::End(t)}->ConceptBooleanTestable;
+	};
+
+	struct IsEmptyCpo
+	{
+		template<class T>
+			requires ConceptHasMemberIsEmpty<T>
+		constexpr bool operator()(T&& t) const noexcept(noexcept(bool(t.isEmpty()))) {
+			return t.isEmpty();
+		}
+		template<class T>
+			requires ConceptCanIsEmptyBySize<T>
+		constexpr bool operator()(T&& t) const noexcept(noexcept(ranges::Size(Forward<T>(t)) == 0)) {
+			return ranges::Size(Forward<T>(t)) == 0;
+		}
+		template<class T>
+			requires ConceptCanIsEmptyByBE<T>
+		constexpr bool operator()(T&& t) const noexcept(noexcept(ranges::Begin(t) == ranges::End(t))) {
+			return ranges::Begin(t)==ranges::End(t);
+		}
+		bool operator()(auto&&) = delete;
+	};
+}
+
+export namespace ne::ranges {
+	inline namespace Cpo {
+		inline constexpr CpoImpl::IsEmptyCpo IsEmpty{};
 	}
 }
