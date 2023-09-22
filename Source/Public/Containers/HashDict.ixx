@@ -3,6 +3,7 @@ import ntl.containers.hash_table;
 import ntl.containers.key_value;
 import ntl.memory.allocator;
 import ntl.utils;
+import ntl.utils.exception_guard;
 import ntl.tuple;
 import ntl.functional.hash;
 import ntl.type_traits;
@@ -21,12 +22,6 @@ namespace ne
             return a == b;
 		}
 	};
-
-    class KeyDuplicated: public LogicError
-    {
-    public:
-        using LogicError::LogicError;
-    };
 }
 
 export namespace ne
@@ -51,13 +46,14 @@ export namespace ne
     private:
         using BaseType = HashTable<ValueType, DefaultKeyValueExtractor, Hasher, KeyEqual, false>;
     public:
-        using BaseType::BaseType;
         using Iterator = typename BaseType::Iterator;
         using ConstIterator = typename BaseType::ConstIterator;
         //using LocalIterator = HashTableIterator<ThisType>;
         //using ConstLocalIter = HashTableConstIter<ThisType>;
         using InsertResult = typename BaseType::InsertResult;
 
+
+        using BaseType::BaseType;
         template<ConceptInputIterator It>
         HashDict(It first, It last, const Allocator& alloc = Allocator());
         template<ConceptInputIterator It>
@@ -207,6 +203,8 @@ export namespace ne
 
         SizeType count(const Key& key) const noexcept;
         bool contains(const Key& key) const noexcept;
+
+        bool isEmpty() const noexcept;
     };
 }
 
@@ -231,7 +229,9 @@ namespace ne
             return { fp, false };
         }
         auto np = BaseType::allocateNode();
+
         BaseType:: constructAtNodeAndSetHash(np, PIECEWISE, ForwardAsTuple(key), ForwardAsTuple(Forward<Args>(args)...));
+
         BaseType::insertNode(np);
         return { np, true };
     }
@@ -246,7 +246,9 @@ namespace ne
             return { fp, false };
         }
         auto np = BaseType::allocateNode();
+
         BaseType::constructAtNodeAndSetHash(np, PIECEWISE, ForwardAsTuple(Move(key)), ForwardAsTuple(Forward<Args>(args)...));
+
         BaseType::insertNode(np);
         return { np, true };
     }
@@ -259,7 +261,9 @@ namespace ne
         if (fp==nullptr)
         {
             auto np = BaseType::allocateNode();
+
             BaseType::constructAtNodeAndSetHash(np, key, Forward<M>(value));
+
             BaseType::insertNode(np);
             return { np, true };
         }
@@ -278,7 +282,9 @@ namespace ne
         if (fp == nullptr)
         {
             auto np = BaseType::allocateNode();
+
             BaseType::constructAtNodeAndSetHash(np, Move(key), Forward<M>(value));
+
             BaseType::insertNode(np);
             return { np, true };
         }
@@ -394,8 +400,9 @@ namespace ne
         auto np = BaseType::findNodeWithKey(key);
         if (np != nullptr) {
             BaseType::removeNode(np);
+            return 1;
         }
-        return size();
+        return 0;
     }
 
     template<class Key, class Value, class HashType, class KeyEqualType>
@@ -418,7 +425,9 @@ namespace ne
         if (fp == nullptr)
         {
             auto np = BaseType::allocateNode();
+
             BaseType::constructAtNodeAndSetHash(np, key, MappedType{});
+
             BaseType::insertNode(np);
             return np->value.value;
         }
@@ -435,7 +444,9 @@ namespace ne
         if (fp == nullptr)
         {
             auto np = BaseType::allocateNode();
+
             BaseType::constructAtNodeAndSetHash(np, Move(key), MappedType{});
+
             BaseType::insertNode(np);
             return np->value.value;
         }
@@ -554,5 +565,9 @@ namespace ne
     template <class Key, class Value, class HashType, class KeyEqualType>
     HashDict<Key, Value, HashType, KeyEqualType>::~HashDict() {}
 
-
+    template<class Key, class Value, class HashType, class KeyEqualType>
+    bool ne::HashDict<Key, Value, HashType, KeyEqualType>::isEmpty() const noexcept
+    {
+        return BaseType::isEmpty();
+    }
 }

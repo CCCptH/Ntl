@@ -359,6 +359,15 @@
     <ClCompile Include="Public\Containers\HashSet.ixx">
       <Filter>Public\Containers</Filter>
     </ClCompile>
+    <ClCompile Include="Public\Ranges\TypeSentinel.ixx">
+      <Filter>Public\Ranges</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Ranges\RangePrimitives.ixx">
+      <Filter>Public\Ranges</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Ranges\RangeProperties.ixx">
+      <Filter>Public\Ranges</Filter>
+    </ClCompile>
     <ClCompile Include="Public\Algorithms\Find.ixx">
       <Filter>Public\Algorithms</Filter>
     </ClCompile>

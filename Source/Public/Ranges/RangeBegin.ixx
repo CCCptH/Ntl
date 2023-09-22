@@ -11,6 +11,9 @@ namespace ne::ranges::CpoImpl
 	void Begin(const auto&) = delete;
 
 	template<class T>
+	concept ConceptCanBorrowRange = TestIsLRef<T> and ENABLE_BORROWED_RANGE<T>;
+
+	template<class T>
 	concept ConceptHasMemberBegin = ConceptCanBorrowRange<T> and requires (T && t)
 	{
 		{ AUTO_CAST(t.begin()) } -> ConceptIOIterator;

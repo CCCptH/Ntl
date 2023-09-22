@@ -4,6 +4,12 @@ import ntl.functional;
 using namespace std;
 using namespace ne;
 
+struct A
+{
+	int a;
+	int b;
+};
+
 struct Functor
 {
 	Functor() {  };
@@ -37,5 +43,10 @@ int main()
 	auto c = Invoke(f3, 3); cout << "Result is " << c << endl;
 	auto d = Invoke(func, 4); cout << "Result is " << d << endl;
 	auto e = Invoke([](int x)->int {cout << "Lamda call2: " << x << endl; return x; }, 5); cout << "Result is " << e << endl;
+
+	A cc{ 114514, 1919810 };
+
+	cout << Invoke(&A::a, cc) << endl;
+
 	return 0;
 }
