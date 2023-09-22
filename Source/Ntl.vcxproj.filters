@@ -45,6 +45,9 @@
     <Filter Include="Public\Ranges">
       <UniqueIdentifier>{e50959c4-19e3-4339-aad2-824965f59f60}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Public\Algorithms">
+      <UniqueIdentifier>{e0d8b652-a006-4628-989e-f7ace97279fd}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Public\TypeTraits\BaseClasses.ixx">
@@ -355,6 +358,9 @@
     </ClCompile>
     <ClCompile Include="Public\Containers\HashSet.ixx">
       <Filter>Public\Containers</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Algorithms\Find.ixx">
+      <Filter>Public\Algorithms</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

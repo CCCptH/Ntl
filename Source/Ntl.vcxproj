@@ -22,6 +22,7 @@
     <ClCompile Include="Private\String\String.cxx" />
     <ClCompile Include="Private\String\Text.cpp" />
     <ClCompile Include="Private\String\Unicode.cxx" />
+    <ClCompile Include="Public\Algorithms\Find.ixx" />
     <ClCompile Include="Public\Compare.ixx" />
     <ClCompile Include="Public\Concepts.ixx" />
     <ClCompile Include="Public\Concepts\Callable.ixx" />

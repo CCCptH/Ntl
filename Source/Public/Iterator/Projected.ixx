@@ -7,7 +7,7 @@ import ntl.type_traits;
 export namespace ne {
    template<class F, class ...Is>
        requires (ConceptIndirectlyReadable<Is> && ...) && ConceptInvocable<F, TypeIteratorReference<Is>...>
-   using TypeIndirectResult = TypeInvokeResult<F, TypeIteratorDifference<Is>...>;
+   using TypeIndirectResult = TypeInvokeResult<F, TypeIteratorReference<Is>...>;
 
    template<ConceptIndirectlyReadable I, ConceptIndirectlyUnaryInvocable<I> Proj>
    struct Projected {
