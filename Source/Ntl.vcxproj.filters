@@ -374,6 +374,9 @@
     <ClCompile Include="Public\Ranges\Dangling.ixx">
       <Filter>Public\Ranges</Filter>
     </ClCompile>
+    <ClCompile Include="Public\Containers\Span.ixx">
+      <Filter>Public\Containers</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\README.md" />
