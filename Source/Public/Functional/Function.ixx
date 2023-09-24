@@ -176,6 +176,30 @@ export namespace ne
 			}
 		}
 
+		Function& operator=(const Function& other)
+		{
+			Function(other).swap(*this);
+			return *this;
+		}
+		Function& operator=(Function&& other) noexcept
+		{
+			Function(Move(other)).swap(*this);
+			return *this;
+		}
+		template<class Fn>
+			requires TestIsInvocable<Fn, Args...>
+		Function& operator=(Fn&& f)
+		{
+			Function(Forward<Fn>(f)).swap(*this);
+			return *this;
+		}
+		template<class F>
+		Function& operator=(RefWrapper<F> f)
+		{
+			Function(f).swap(*this);
+			return *this;
+		}
+
 		R operator()(Args...args) const
 		{
 			if (call == nullptr) [[unlikely]]
