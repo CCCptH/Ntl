@@ -19,7 +19,6 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Private\String\String.cxx" />
     <ClCompile Include="Private\String\Text.cpp" />
     <ClCompile Include="Private\String\Unicode.cxx" />
     <ClCompile Include="Public\Algorithms\Find.ixx" />

@@ -245,9 +245,6 @@
     <ClCompile Include="Public\String\String.ixx">
       <Filter>Public\String</Filter>
     </ClCompile>
-    <ClCompile Include="Private\String\String.cxx">
-      <Filter>Private\String</Filter>
-    </ClCompile>
     <ClCompile Include="Public\Compare.ixx">
       <Filter>Public\Utilities</Filter>
     </ClCompile>
