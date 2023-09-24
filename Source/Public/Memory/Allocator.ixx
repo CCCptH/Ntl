@@ -7,7 +7,7 @@ import ntl.memory.bad_alloc;
 
 export namespace ne {
 
-    class Allocator
+    class __declspec(dllexport) Allocator
     {
     private:
         MemoryArena* arena;

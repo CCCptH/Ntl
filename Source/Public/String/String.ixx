@@ -57,7 +57,7 @@ export namespace ne
 	 * @class String
 	 * @brief Works like std::string
 	*/
-	class String
+	class __declspec(dllexport) String
 	{
 	public:
 		using CharType = char;
