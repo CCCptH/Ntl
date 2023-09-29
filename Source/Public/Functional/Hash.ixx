@@ -235,7 +235,7 @@ namespace ne
 			b);
 	}
 
-	uint64 Hash128to64(const U128& x) {
+	inline constexpr uint64 Hash128to64(const U128& x) {
 		// Murmur-inspired hashing.
 		const uint64 kMul = 0x9ddfea08eb382d69ULL;
 		uint64 a = (x.low ^ x.high) * kMul;
@@ -246,7 +246,7 @@ namespace ne
 		return b;
 	}
 
-	uint64 HashLen16(uint64 u, uint64 v) {
+	inline constexpr uint64 HashLen16(uint64 u, uint64 v) {
 		return Hash128to64(U128{u, v});
 	}
 
@@ -280,7 +280,7 @@ namespace ne
 			y = Rotate(y + v.high + Fetch64(bytes + 48), 42) * K1;
 			x ^= w.high;
 			y += v.low + Fetch64(bytes + 40);
-			z = Rotate(z + w.high, 33) * K1;
+			z = Rotate(z + w.low, 33) * K1;
 			v = WeakHashLen32WithSeeds(bytes, v.high * K1, x + w.low);
 			w = WeakHashLen32WithSeeds(bytes + 32, z + w.high, y + Fetch64(bytes + 16));
 			utils::Swap(z, x);
