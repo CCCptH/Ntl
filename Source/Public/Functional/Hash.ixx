@@ -1,4 +1,5 @@
 module;
+#include <bit>
 #include <stdlib.h>
 export module ntl.functional.hash;
 import ntl.concepts;
@@ -38,14 +39,28 @@ namespace ne
 
 		} u64pack;
 
-		u64pack.b0 = bytes[0];
-		u64pack.b1 = bytes[1];
-		u64pack.b2 = bytes[2];
-		u64pack.b3 = bytes[3];
-		u64pack.b4 = bytes[4];
-		u64pack.b5 = bytes[5];
-		u64pack.b6 = bytes[6];
-		u64pack.b7 = bytes[7];
+		if constexpr (std::endian::native == std::endian::big)
+		{
+			u64pack.b0 = bytes[0];
+			u64pack.b1 = bytes[1];
+			u64pack.b2 = bytes[2];
+			u64pack.b3 = bytes[3];
+			u64pack.b4 = bytes[4];
+			u64pack.b5 = bytes[5];
+			u64pack.b6 = bytes[6];
+			u64pack.b7 = bytes[7];
+		}
+		else
+		{
+			u64pack.b0 = bytes[7];
+			u64pack.b1 = bytes[6];
+			u64pack.b2 = bytes[5];
+			u64pack.b3 = bytes[4];
+			u64pack.b4 = bytes[3];
+			u64pack.b5 = bytes[2];
+			u64pack.b6 = bytes[1];
+			u64pack.b7 = bytes[0];
+		}
 
 		return u64pack.v;
 	}
@@ -62,10 +77,20 @@ namespace ne
 			};
 		} u32pack;
 
-		u32pack.b0 = bytes[0];
-		u32pack.b1 = bytes[1];
-		u32pack.b2 = bytes[2];
-		u32pack.b3 = bytes[3];
+		if constexpr (std::endian::native==std::endian::big)
+		{
+			u32pack.b0 = bytes[0];
+			u32pack.b1 = bytes[1];
+			u32pack.b2 = bytes[2];
+			u32pack.b3 = bytes[3];
+		}
+		else
+		{
+			u32pack.b0 = bytes[3];
+			u32pack.b1 = bytes[2];
+			u32pack.b2 = bytes[1];
+			u32pack.b3 = bytes[0];
+		}
 
 		return u32pack.v;
 	}
