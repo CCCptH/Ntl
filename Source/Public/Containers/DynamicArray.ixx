@@ -537,7 +537,7 @@ namespace ne
         static_assert(TestIsDefaultConstructible<Type>, "[ntl.containers.dynamic_array] This constructor expect Type to be default constructible");
         this->allocateAndSetBeginAndCap(n);
         this->p_end = this->p_begin+n;
-        ConstructN(this->p_begin, this->p_end);
+        ConstructN(this->p_begin, n);
     }
 
     template<class Type>
@@ -545,7 +545,7 @@ namespace ne
         static_assert(TestIsCopyConstructible<Type>, "[ntl.containers.dynamic_array] This constructor expect Type to be copy constructible");
         this->allocateAndSetBeginAndCap(n);
         this->p_end = this->p_begin+n;
-        ConstructN(this->p_begin, this->p_end, x);
+        ConstructN(this->p_begin, n, x);
     }
 
     template<class Type>
