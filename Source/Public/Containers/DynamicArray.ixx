@@ -800,22 +800,23 @@ namespace ne
 
     template<class Type>
     void DynamicArray<Type>::reserve(SizeType n) {
-        auto new_begin = allocator.allocate<Type>(n);
-        auto it_new = new_begin;
-        auto it_old = p_begin;
         if (n > capacity())
         {
+            auto new_begin = allocator.allocate<Type>(n);
+            auto old_sz = size();
+            auto it_new = new_begin;
+            auto it_old = p_begin;
             while (it_old < p_end) {
                 Construct(it_new, Move(*it_old));
                 Destruct(it_old);
                 ++it_new;
                 ++it_old;
             }
+            allocator.deallocate(p_begin);
+            p_begin = new_begin;
+            p_end = new_begin + old_sz;
+            p_cap = new_begin + n;
         }
-        allocator.deallocate(p_begin);
-        p_begin = new_begin;
-        p_end = new_begin + n;
-        p_cap = new_begin + n;
     }
 
     template<class Type>
@@ -1027,13 +1028,16 @@ namespace ne
     void DynamicArray<Type>::resize(SizeType n) {
         if (n <= size()) {
             DestructN(p_begin + n, size() - n);
+            p_end = p_begin + n;
         }
         else if (n < capacity()) {
             ConstructN(p_end, n - size());
+            p_end = p_begin + n;
         }
         else {
             reserve(n);
             ConstructN(p_end, n - size());
+            p_end = p_begin + n;
         }
     }
 }
