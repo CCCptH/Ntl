@@ -285,8 +285,12 @@ export namespace ne
         ConstReverseIterator crend() const noexcept;
 
         Type* getAddress() noexcept;
-
         const Type* getAddress() const noexcept;
+        Type* data() noexcept;
+        const Type* data() const noexcept;
+
+        void resize(SizeType n);
+
     private:
         Pointer p_begin;
         Pointer p_end;
@@ -799,27 +803,12 @@ namespace ne
         auto new_begin = allocator.allocate<Type>(n);
         auto it_new = new_begin;
         auto it_old = p_begin;
-        if (n >= size())
+        if (n > capacity())
         {
             while (it_old < p_end) {
                 Construct(it_new, Move(*it_old));
                 Destruct(it_old);
                 ++it_new;
-                ++it_old;
-            }
-        }
-        else
-        {
-	        while(it_new < new_begin+n)
-	        {
-                Construct(it_new, Move(*it_old));
-                Destruct(it_old);
-                ++it_new;
-                ++it_old;
-	        }
-            while(it_old < p_end)
-            {
-                Destruct(it_old);
                 ++it_old;
             }
         }
@@ -1022,5 +1011,29 @@ namespace ne
     template<class Type>
     auto DynamicArray<Type>::getAddress() const noexcept -> ConstPointer {
         return p_begin;
+    }
+
+    template<class Type>
+    auto DynamicArray<Type>::data() noexcept -> Pointer {
+        return p_begin;
+    }
+
+    template<class Type>
+    auto DynamicArray<Type>::data() const noexcept -> ConstPointer {
+        return p_begin;
+    }
+
+    template<class Type>
+    void DynamicArray<Type>::resize(SizeType n) {
+        if (n <= size()) {
+            DestructN(p_begin + n, size() - n);
+        }
+        else if (n < capacity()) {
+            ConstructN(p_end, n - size());
+        }
+        else {
+            reserve(n);
+            ConstructN(p_end, n - size());
+        }
     }
 }
