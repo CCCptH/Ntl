@@ -371,7 +371,7 @@ export namespace ne
             return has_value;
         }
 
-        constexpr T& value() noexcept
+        constexpr T& value() 
         {
             if (!has_value)
             {
@@ -379,7 +379,7 @@ export namespace ne
             }
             return *ptr();
         }
-        constexpr const T& value() const noexcept
+        constexpr const T& value() const 
         {
             if (!has_value)
             {
@@ -397,12 +397,12 @@ export namespace ne
         template<class U>
         constexpr T valueOr(U&& u) const&
         {
-            return hasValue() ? *ptr() : static_cast<T>(Forward<U>(u));
+            return hasValue() ? value() : static_cast<T>(Forward<U>(u));
         }
         template<class U>
         constexpr T valueOr(U&& u) &&
         {
-            return hasValue() ? Move(*ptr()) : static_cast<T>(Forward<U>(u));
+            return hasValue() ? Move(value()) : static_cast<T>(Forward<U>(u));
         }
 
         template<class F>
