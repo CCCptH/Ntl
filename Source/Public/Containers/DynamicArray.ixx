@@ -589,7 +589,7 @@ namespace ne
             p_begin = v.p_begin;
             p_end = v.p_end;
             p_cap = v.p_cap;
-            v.p_begin = v.p_end = v.p_cap;
+            v.p_begin = v.p_end = v.p_cap = nullptr;
         }
         else {
             for (auto it = MoveIterator(v.begin()); it != MoveIterator(v.end()); ++it) {
