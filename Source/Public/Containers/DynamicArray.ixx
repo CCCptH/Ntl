@@ -577,15 +577,8 @@ namespace ne
 
     template<class Type>
     auto DynamicArray<Type>::operator=(const DynamicArray<Type> &v) -> ThisType& {
-        if (this->allocator != v.allocator) {
-            clear();
-            this->allocator = v.allocator;
-            allocateAndSetBeginAndCap(v.size());
-            copyFrom(v.begin(), v.end());
-        }
-        else {
-            this->template assign(v.begin(), v.end());
-        }
+        clear();
+        this->assign(v.begin(), v.end());
         return *this;
     }
 
