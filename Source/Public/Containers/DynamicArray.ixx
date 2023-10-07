@@ -603,16 +603,15 @@ namespace ne
                 emplaceBack((*it));
             }
             DestructN(v.p_begin, v.size());
-            v.allocator.template deallocate(v.p_begin);
+            v.allocator.deallocate(v.p_begin);
             v.p_begin = v.p_end = v.p_cap = nullptr;
-            v.sz = 0;
         }
         return *this;
     }
 
     template<class Type>
     auto DynamicArray<Type>::operator=(InitList<Type> i) -> ThisType& {
-        this->template assign(i.begin(), i.end());
+        this->assign(i.begin(), i.end());
     }
 
     template<class Type>
