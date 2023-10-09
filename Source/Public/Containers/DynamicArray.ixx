@@ -704,6 +704,7 @@ namespace ne
             reallocAndResetData(getNewCapacity(size()));
             Construct(p_end, Forward<Args>(args)...);
         }
+        ++p_end;
         return *this;
     }
 
