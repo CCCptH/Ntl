@@ -195,10 +195,10 @@ export namespace ne
         }
 
         template<class A, class B>
-        friend decltype(Declval<Pointer>() <=> nullptr)
+        friend decltype(Declval<Pointer>() <=> Declval<Pointer>())
             operator<=> (const UniquePtr<A, B>& a, decltype(nullptr)) noexcept
         {
-            return a.ptr <=> nullptr;
+            return a.ptr <=> static_cast<Pointer>(nullptr);
         }
 
         template<class A, class B>
