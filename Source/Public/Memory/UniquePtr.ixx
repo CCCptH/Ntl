@@ -418,6 +418,13 @@ export namespace ne
             return ptr[i];
         }
 
+        template<class A, class B>
+        friend decltype(Declval<Pointer>() <=> Declval<Pointer>())
+            operator<=> (const UniquePtr<A, B>& a, decltype(nullptr)) noexcept
+        {
+            return a.ptr <=> static_cast<Pointer>(nullptr);
+        }
+
         template<class A, class B, class C, class D>
         friend decltype(Declval<Pointer>() <=> Declval<Pointer>())
             operator<=> (const UniquePtr<A, B>& a, const UniquePtr<C, D>& b) noexcept
@@ -429,13 +436,6 @@ export namespace ne
         friend bool operator== (const UniquePtr<A, B>& a, const UniquePtr<C, D>& b) noexcept
         {
             return a.ptr == b.ptr;
-        }
-
-        template<class A, class B>
-        friend decltype(Declval<Pointer>() <=> Declval<Pointer>() )
-            operator<=> (const UniquePtr<A, B>& a, decltype(nullptr)) noexcept
-        {
-            return a.ptr <=> static_cast<Pointer>(nullptr);
         }
 
         template<class A, class B>
