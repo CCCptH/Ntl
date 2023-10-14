@@ -199,22 +199,33 @@ namespace ne
         auto old_ptr = LayoutData(s);
         // one more space for '\0'
         ++n;
-        if (n < StringLayout::SHORT_BYTES)
-        {
-            if (IsLargeLayout(s))
-            {
-                InitLayout(s);
-                s.layout.small.sz = n;
-                std::memcpy(s.layout.small.data, old_ptr, n);
+        auto using_small = IsSmallLayout(s);
+        if (n > LayoutCapacity(s)) {
+                LayoutAlloc(s, n, allocator);
+                auto new_sz = old_size;
+                LayoutWrite(s, old_ptr, 0, new_sz);
+                s.layout.large.sz = new_sz;
+                if (!using_small) {
+                    allocator.deallocate(old_ptr);
+                }
+        }
+    }
+
+    inline void LayoutSqueeze(StringLayout& s, Allocator& alloc) {
+        auto sz = LayoutSize(s);
+        if (new_cap < StringLayout::SHORT_BYTES) {
+            if (IsLargeLayout(s)) {
+                auto ptr = LayoutData(s);
+                ToShortLayout(s);
+                LayoutWrite(s, ptr, 0, sz);
+                alloc.deallocate(ptr);
             }
         }
-        else
-        {
-            LayoutAlloc(s, n, allocator);
-            auto new_sz = old_size < n ? old_size : n;
-            LayoutWrite(s, old_ptr, 0, new_sz);
-            s.layout.large.sz = new_sz;
-            allocator.deallocate(old_ptr);
+        else {
+            auto ptr = LayoutData(s);
+            LayoutAlloc(s, sz, alloc);
+            LayoutWrite(s, ptr, 0, sz);
+            alloc.deallocate(s);
         }
     }
 
@@ -671,7 +682,7 @@ namespace ne
 
     void String::squeeze()
     {
-        LayoutReserve(layout, size(), allocator);
+        LayoutSqueeze(layout, allocator);
     }
 
     String& String::append(const String& str)
