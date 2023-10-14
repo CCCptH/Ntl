@@ -213,7 +213,7 @@ namespace ne
 
     inline void LayoutSqueeze(StringLayout& s, Allocator& alloc) {
         auto sz = LayoutSize(s);
-        if (new_cap < StringLayout::SHORT_BYTES) {
+        if (sz < StringLayout::SHORT_BYTES) {
             if (IsLargeLayout(s)) {
                 auto ptr = LayoutData(s);
                 ToShortLayout(s);
@@ -289,7 +289,7 @@ namespace ne
     }
 
     // TODO: TO SMALL LAYOUT WHEN REMOVE TOO MUCH CHARACTOR
-    inline void LayoutRemove(StringLayout& s, StringLayout::SizeType pos, StringLayout::SizeType n)
+    inline void LayoutRemove(StringLayout& s, StringLayout::SizeType pos, StringLayout::SizeType n, Allocator& alloc)
     {
         auto sz = LayoutSize(s);
         auto ptr = LayoutData(s);
@@ -298,6 +298,9 @@ namespace ne
             ++ptr;
         }
         SetLayoutSize(s, sz - n);
+        if (LayoutSize(s) < StringLayout::SHORT_BYTES) {
+            LayoutSqueeze(s, alloc);
+        }
     }
 
     inline void LayoutShallowCopy(StringLayout& dst, const StringLayout& from)
@@ -1285,7 +1288,7 @@ namespace ne
                                 throw OutOfRange{ "[ntl.string.string] Param n is out of range." };
                             }
                             pos = pos >= 0 ? pos : size() + pos;
-                            LayoutRemove(layout, pos, n);
+                            LayoutRemove(layout, pos, n, allocator);
                             return *this;
     }
 
