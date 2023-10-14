@@ -225,7 +225,7 @@ namespace ne
             auto ptr = LayoutData(s);
             LayoutAlloc(s, sz, alloc);
             LayoutWrite(s, ptr, 0, sz);
-            alloc.deallocate(s);
+            alloc.deallocate(ptr);
         }
     }
 
