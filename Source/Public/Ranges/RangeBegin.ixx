@@ -5,25 +5,22 @@ import ntl.iterator;
 import ntl.ranges.range_utils;
 
 // Begin
-namespace ne::ranges::CpoImpl
+export namespace ne::ranges::CpoImpl
 {
 	void Begin(auto&) = delete;
 	void Begin(const auto&) = delete;
 
 	template<class T>
-	concept ConceptCanBorrowRange = TestIsLRef<T> and ENABLE_BORROWED_RANGE<T>;
-
-	template<class T>
 	concept ConceptHasMemberBegin = ConceptCanBorrowRange<T> and requires (T && t)
 	{
-		{ AUTO_CAST(t.begin()) } -> ConceptIOIterator;
+		{ AutoCast(t.begin()) } -> ConceptIOIterator;
 	};
 	template<class T>
 	concept ConceptUnqualifiedBegin = (!ConceptHasMemberBegin<T>) and ConceptCanBorrowRange<T>
 		and TestIsCUE<T>
 		and requires (T&& t)
 	{
-		{ AUTO_CAST(Begin(t)) } -> ConceptIOIterator;
+		{ AutoCast(Begin(t)) } -> ConceptIOIterator;
 	};
 
 	struct BeginCpo
@@ -43,18 +40,20 @@ namespace ne::ranges::CpoImpl
 			return arr + 0;
 		}
 		template<class T>
-			requires ConceptUnqualifiedBegin<T>
-		[[nodiscard]]
-		constexpr auto operator()(T&& t) noexcept(noexcept(AUTO_CAST(Begin(t))))
-		{
-			return AUTO_CAST(Begin(t));
-		}
-		template<class T>
 			requires ConceptHasMemberBegin<T>
 		[[nodiscard]]
-		constexpr auto operator()(T&& t) noexcept(noexcept(AUTO_CAST(t.begin())))
+		constexpr auto operator()(T&& t) const
+			noexcept(noexcept(AutoCast(t.begin())))
 		{
-			return AUTO_CAST(t.begin());
+			return AutoCast(t.begin());
+		}
+		template<class T>
+			requires ConceptUnqualifiedBegin<T>
+		[[nodiscard]]
+		constexpr auto operator()(T&& t) const 
+			noexcept(noexcept(AutoCast(Begin(t))))
+		{
+			return AutoCast(Begin(t));
 		}
 		void operator()(auto&&) const = delete;
 	};

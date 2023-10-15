@@ -83,6 +83,7 @@
     <ClCompile Include="Public\Ranges\Dangling.ixx" />
     <ClCompile Include="Public\Ranges\RangePrimitives.ixx" />
     <ClCompile Include="Public\Ranges\RangeProperties.ixx" />
+    <ClCompile Include="Public\Ranges\Ranges.ixx" />
     <ClCompile Include="Public\Ranges\RangeUtils.ixx" />
     <ClCompile Include="Public\Ranges\RangeBegin.ixx" />
     <ClCompile Include="Public\Ranges\EnableBorrowedRange.ixx" />

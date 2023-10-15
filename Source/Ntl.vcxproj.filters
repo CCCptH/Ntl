@@ -377,6 +377,9 @@
     <ClCompile Include="Private\String\String.cxx">
       <Filter>Private\String</Filter>
     </ClCompile>
+    <ClCompile Include="Public\Ranges\Ranges.ixx">
+      <Filter>Public\Ranges</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\README.md" />

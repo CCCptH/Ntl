@@ -1,4 +1,4 @@
-export module ntl.algorithm.find;
+export module ntl.algorithms.find;
 import ntl.iterator;
 import ntl.ranges.concepts;
 import ntl.ranges.dangling;
@@ -10,7 +10,7 @@ namespace ne::algs::NiebloidImpl
 	{
 		template<ConceptInputIterator I, ConceptSentinelFor<I> S, class T, class Proj=functors::Identity>
 			requires ConceptIndirectBinaryPredicate<functors::Equal, Projected<I, Proj>, const T*>
-		constexpr I find(I first, S last, const T& val, Proj proj = {})  const
+		constexpr I operator()(I first, S last, const T& val, Proj proj = {})  const
 		{
 			for (; first != last; ++first) {
 				if (Invoke(proj, *first) == val) {
@@ -22,7 +22,7 @@ namespace ne::algs::NiebloidImpl
 
 		template<ne::ranges::ConceptInputRange R, class T, class Proj = functors::Identity>
 			requires ConceptIndirectBinaryPredicate<functors::Equal, Projected<ranges::TypeIterator<R>, Proj>, const T*>
-		constexpr ne::ranges::TypeBorrowedIterator<R> find(R&& r, const T& val, Proj proj = {}) const
+		constexpr ne::ranges::TypeBorrowedIterator<R> operator()(R&& r, const T& val, Proj proj = {}) const
 		{
 			return (*this)(ranges::Begin(r), ranges::End(r), val, Ref(proj));
 		}

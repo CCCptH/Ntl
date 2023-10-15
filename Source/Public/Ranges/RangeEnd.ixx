@@ -11,19 +11,16 @@ namespace ne::ranges::CpoImpl
 	void End(const auto&) = delete;
 
 	template<class T>
-	concept ConceptCanBorrowRange = TestIsLRef<T> and ENABLE_BORROWED_RANGE<T>;
-
-	template<class T>
 	concept ConceptHasMemberEnd = ConceptCanBorrowRange<T> and requires (T && t)
 	{
-		{ AUTO_CAST(t.end()) } -> ConceptIOIterator;
+		{ AutoCast(t.end()) } -> ConceptIOIterator;
 	};
 	template<class T>
 	concept ConceptUnqualifiedEnd = (!ConceptHasMemberEnd<T>) and ConceptCanBorrowRange<T>
 		and (TestIsCUE<T>)
 		and requires (T && t)
 	{
-		{ AUTO_CAST(End(t)) } -> ConceptSentinelFor<TypeIterator<T>>;
+		{ AutoCast(End(t)) } -> ConceptSentinelFor<TypeIterator<T>>;
 	};
 
 	struct EndCpo
@@ -38,16 +35,18 @@ namespace ne::ranges::CpoImpl
 		template<class T>
 			requires ConceptUnqualifiedEnd<T>
 		[[nodiscard]]
-		constexpr auto operator()(T&& t) noexcept(noexcept(AUTO_CAST(End(t))))
+		constexpr auto operator()(T&& t) const 
+			noexcept(noexcept(AutoCast(End(t))))
 		{
-			return AUTO_CAST(End(t));
+			return AutoCast(End(t));
 		}
 		template<class T>
 			requires ConceptHasMemberEnd<T>
 		[[nodiscard]]
-		constexpr auto operator()(T&& t) noexcept(noexcept(AUTO_CAST(t.end())))
+		constexpr auto operator()(T&& t) const 
+			noexcept(noexcept(AutoCast(t.end())))
 		{
-			return AUTO_CAST(t.end());
+			return AutoCast(t.end());
 		}
 		void operator()(auto&&) const = delete;
 	};
