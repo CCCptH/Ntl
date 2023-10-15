@@ -141,8 +141,10 @@ export namespace ne {
         using Type = T;
         template<class U>
         requires (not TestIsSame<RefWrapper, TypeUnCVRef<U>>) and requires { RefWrapperHelper(Declval<U>()); }
-        constexpr RefWrapper(U&& u) noexcept(noexcept(RefWrapperHelper<T>(Forward<U>(u))))
+        constexpr RefWrapper(U&& u)
+    		noexcept
             : ptr(GetAddress(RefWrapperHelper<T>(Forward<U>(u))))
+            
         {}
 
         RefWrapper(const RefWrapper&) noexcept = default;

@@ -3,6 +3,7 @@
 import ntl.optional;
 import ntl.type_traits;
 import ntl.utils;
+import ntl.functional.ref_wrapper;
 
 using namespace std;
 using namespace ne;
@@ -18,6 +19,7 @@ void print(auto const& x)
 		cout << "Null optional" << endl;
 	}
 }
+
 
 int main()
 {
