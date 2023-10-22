@@ -7,9 +7,16 @@ module ntl.string.string;
 
 namespace ne
 {
-    inline void InitLayout(StringLayout& s) noexcept
+	/**
+	 * String layout's data always contains '\0'
+	 * It capacity considers '\0'
+	 * 
+	 */
+
+	inline void InitLayout(StringLayout& s) noexcept
     {
         std::memset(s.layout.raw, 0, StringLayout::LAYOUT_BYTES);
+        s.layout.small.sz = 1;
     }
 
     inline bool IsSmallLayout(const StringLayout& s) noexcept
@@ -26,7 +33,7 @@ namespace ne
         if (IsLargeLayout(s))
         {
             allocator.deallocate(s.layout.large.data);
-            s.layout.large.data = nullptr;
+            InitLayout(s);
         }
     }
 
@@ -108,20 +115,24 @@ namespace ne
         }
     }
 
+    // Set large.data to allocated ptr and large.cap to n
     inline void LayoutAlloc(StringLayout& s, uint64 n, Allocator& allocator)
     {
         s.layout.large.data = allocator.allocate<StringLayout::CharType>(n);
         s.layout.large.cap = n;
     }
 
+    // Allocate cap bytes if necessary, Do not consider '\0'
     inline void InitLayout(StringLayout& s, size_t cap, Allocator& allocator)
     {
-        ++cap;
-        InitLayout(s);
         if (cap > StringLayout::SHORT_BYTES)
         {
             s.layout.large.tag = 1;
             LayoutAlloc(s, cap, allocator);
+        }
+        else
+        {
+            InitLayout(s);
         }
     }
 
@@ -131,13 +142,12 @@ namespace ne
         else s.layout.large.sz = n;
     }
 
+    // n bytes is need(include '\0'). if space can not contains n bytes, expand it
     inline void TryExpandLayout(StringLayout& s, uint64 n, Allocator& allocator)
     {
         auto old_cap = LayoutCapacity(s);
         auto old_size = LayoutSize(s);
         auto old_ptr = LayoutData(s);
-        // Space for '\0'
-        ++n;
         if (n > old_cap) {
             auto new_cap = old_cap;
             while (new_cap < n) {
@@ -152,6 +162,13 @@ namespace ne
             s.layout.large.data = new_ptr;
         }
     }
+
+    // Set the last byte to 0
+    inline void LayoutEnd0(StringLayout& s)
+	{
+        auto sz = LayoutSize(s);
+        LayoutData(s)[sz-1] = '\0';
+	}
 
     inline void LayoutWrite(StringLayout& s, const char* str, StringLayout::SizeType pos, StringLayout::SizeType n, Allocator& allocator)
     {
@@ -177,6 +194,7 @@ namespace ne
         if (pos + n > sz) SetLayoutSize(s, pos + n);
     }
 
+    // Write layout if layout will not expand
     inline void LayoutWrite(StringLayout& s, const char* str, StringLayout::SizeType pos, StringLayout::SizeType n)
     {
         auto sz = LayoutSize(s);
@@ -197,8 +215,6 @@ namespace ne
     {
         auto old_size = LayoutSize(s);
         auto old_ptr = LayoutData(s);
-        // one more space for '\0'
-        ++n;
         auto using_small = IsSmallLayout(s);
         if (n > LayoutCapacity(s)) {
                 LayoutAlloc(s, n, allocator);
@@ -207,6 +223,10 @@ namespace ne
                 s.layout.large.sz = new_sz;
                 if (!using_small) {
                     allocator.deallocate(old_ptr);
+                }
+                else
+                {
+                    ToLargeLayout(s);
                 }
         }
     }
@@ -279,7 +299,7 @@ namespace ne
             TryExpandLayout(s, new_sz, allocator);
             auto data = LayoutData(s);
             auto ptr = data + diff + old_sz - 1;
-            while (ptr != data + pos + count - 1) {
+            while (ptr != data + pos + count-1) {
                 *ptr = *(ptr - diff);
                 --ptr;
             }
@@ -319,7 +339,7 @@ namespace ne
     }
     void String::setEndTag()
     {
-        setEndTag(LayoutSize(layout));
+        setEndTag(size());
     }
 
     String::String()
@@ -472,14 +492,14 @@ namespace ne
     {
 
         if (count < 0) [[unlikely]]
-            {
-                throw InvalidArgument{ "[ntl.string.string] Invalid argument, count can not be less than 0." };
-            }
-            clear();
-            auto n = count < str.size() ? count : str.size();
-            LayoutWrite(this->layout, str.cstr(), 0, n, allocator);
-            setEndTag();
-            return *this;
+        {
+            throw InvalidArgument{ "[ntl.string.string] Invalid argument, count can not be less than 0." };
+        }
+        clear();
+        auto n = count < str.size() ? count : str.size();
+        LayoutWrite(this->layout, str.cstr(), 0, n, allocator);
+        setEndTag();
+        return *this;
     }
     String& String::assign(String&& str)
     {
@@ -508,14 +528,14 @@ namespace ne
     String& String::assign(const char* str, SizeType count)
     {
         if (count < 0) [[unlikely]]
-            {
-                throw InvalidArgument{ "[ntl.string.string] Invalid argument, count can not be less than 0." };
-            }
-            clear();
-            auto n = count;
-            LayoutWrite(this->layout, str, 0, n, allocator);
-            setEndTag();
-            return *this;
+        {
+            throw InvalidArgument{ "[ntl.string.string] Invalid argument, count can not be less than 0." };
+        }
+        clear();
+        auto n = count;
+        LayoutWrite(this->layout, str, 0, n, allocator);
+        setEndTag();
+        return *this;
     }
 
     String& String::operator=(const String& str)
@@ -744,14 +764,14 @@ namespace ne
     String& String::prepend(const String& str)
     {
         auto ptr = str.cstr();
-        LayoutReplace(layout, ptr, 0, 0, str.size(), allocator);
+        LayoutReplace(layout, ptr, str.size(), 0, 0, allocator);
         setEndTag();
         return *this;
     }
 
     String& String::prepend(CharType ch)
     {
-        LayoutReplace(layout, ch, 0, 0, 1, allocator);
+        LayoutReplace(layout, ch, 1, 0, 0, allocator);
         setEndTag();
         return *this;
     }
@@ -759,7 +779,7 @@ namespace ne
     String& String::prepend(const char* str)
     {
         auto sz = std::strlen(str);
-        LayoutReplace(layout, str, 0, 0, sz, allocator);
+        LayoutReplace(layout, str, sz, 0, 0, allocator);
         setEndTag();
         return *this;
     }
@@ -774,7 +794,7 @@ namespace ne
                 throw InvalidArgument{ "[ntl.string.string] Invalid argument, count can not be less than 0." };
             }
             auto sz = count;
-            LayoutReplace(layout, str, 0, 0, count, allocator);
+            LayoutReplace(layout, str, count, 0, 0, allocator);
             setEndTag();
             return *this;
     }
