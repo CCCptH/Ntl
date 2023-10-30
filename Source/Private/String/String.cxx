@@ -1,19 +1,19 @@
 module;
 #include <charconv>
 #include <string>
+#include <iostream>
 #include <cstring>
 module ntl.string.string;
 
-
 namespace ne
 {
-	/**
-	 * String layout's data always contains '\0'
-	 * It capacity considers '\0'
-	 * 
-	 */
+    /**
+     * String layout's data always contains '\0'
+     * It capacity considers '\0'
+     * 
+     */
 
-	inline void InitLayout(StringLayout& s) noexcept
+    inline void InitLayout(StringLayout& s) noexcept
     {
         std::memset(s.layout.raw, 0, StringLayout::LAYOUT_BYTES);
         s.layout.small.sz = 1;
@@ -102,19 +102,6 @@ namespace ne
         return LayoutCapacity(s) - LayoutSize(s);
     }
 
-    // Clear Data, Do not release space
-    inline void ClearLayout(StringLayout& s)
-    {
-        if (IsSmallLayout(s))
-        {
-            InitLayout(s);
-        }
-        else
-        {
-            s.layout.large.sz = 0;
-        }
-    }
-
     // Set large.data to allocated ptr and large.cap to n
     inline void LayoutAlloc(StringLayout& s, uint64 n, Allocator& allocator)
     {
@@ -163,36 +150,77 @@ namespace ne
         }
     }
 
+    inline void TryNewExpandedLayout(StringLayout& s, uint64 n, Allocator& alloc) {
+        auto old_cap = LayoutCapacity(s);
+        auto old_ptr = LayoutData(s);
+        if (n > old_cap) {
+            auto new_cap = old_cap;
+            while (new_cap < n) {
+                new_cap *= 2;
+            }
+            auto new_ptr = alloc.allocate<StringLayout::CharType>(new_cap);
+            if (IsLargeLayout(s)) alloc.deallocate(old_ptr);
+            else ToLargeLayout(s);
+            s.layout.large.sz = 1;
+            s.layout.large.cap = new_cap;
+            s.layout.large.data = new_ptr;
+            new_ptr[0] = '\0';
+        }
+    }
+
+    inline void TryNewSuitableLayout(StringLayout& s, uint64 n, Allocator& alloc) {
+        if (n <= StringLayout::SHORT_BYTES) {
+            ReleaseLayout(s, alloc);
+        }
+        else {
+            TryNewExpandedLayout(s, n, alloc);
+        }
+    }
+
     // Set the last byte to 0
     inline void LayoutEnd0(StringLayout& s)
-	{
+    {
         auto sz = LayoutSize(s);
         LayoutData(s)[sz-1] = '\0';
-	}
-
-    inline void LayoutWrite(StringLayout& s, const char* str, StringLayout::SizeType pos, StringLayout::SizeType n, Allocator& allocator)
-    {
-        auto sz = LayoutSize(s);
-        if (pos + n >= sz)
-        {
-            TryExpandLayout(s, pos + n, allocator);
-        }
-        auto ptr = LayoutData(s);
-        std::memcpy(ptr + pos, str, n);
-        if (pos + n > sz) SetLayoutSize(s, pos + n);
     }
 
-    inline void LayoutWrite(StringLayout& s, String::CharType ch, StringLayout::SizeType pos, StringLayout::SizeType n, Allocator& allocator)
+    // Clear Data, Do not release space
+    inline void ClearLayout(StringLayout& s)
     {
-        auto sz = LayoutSize(s);
-        if (pos + n >= sz)
+        if (IsSmallLayout(s))
         {
-            TryExpandLayout(s, pos + n, allocator);
+            InitLayout(s);
         }
-        auto ptr = LayoutData(s);
-        std::memset(ptr + pos, ch, n);
-        if (pos + n > sz) SetLayoutSize(s, pos + n);
+        else
+        {
+            s.layout.large.sz = 1;
+            LayoutEnd0(s);
+        }
     }
+
+    //inline void LayoutWrite(StringLayout& s, const char* str, StringLayout::SizeType pos, StringLayout::SizeType n, Allocator& allocator)
+    //{
+    //    auto sz = LayoutSize(s);
+    //    if (pos + n >= sz)
+    //    {
+    //        TryExpandLayout(s, pos + n, allocator);
+    //    }
+    //    auto ptr = LayoutData(s);
+    //    std::memcpy(ptr + pos, str, n);
+    //    if (pos + n > sz) SetLayoutSize(s, pos + n);
+    //}
+
+    //inline void LayoutWrite(StringLayout& s, String::CharType ch, StringLayout::SizeType pos, StringLayout::SizeType n, Allocator& allocator)
+    //{
+    //    auto sz = LayoutSize(s);
+    //    if (pos + n >= sz)
+    //    {
+    //        TryExpandLayout(s, pos + n, allocator);
+    //    }
+    //    auto ptr = LayoutData(s);
+    //    std::memset(ptr + pos, ch, n);
+    //    if (pos + n > sz) SetLayoutSize(s, pos + n);
+    //}
 
     // Write layout if layout will not expand
     inline void LayoutWrite(StringLayout& s, const char* str, StringLayout::SizeType pos, StringLayout::SizeType n)
@@ -200,7 +228,6 @@ namespace ne
         auto sz = LayoutSize(s);
         auto ptr = LayoutData(s);
         std::memcpy(ptr + pos, str, n);
-        if (pos + n > sz) SetLayoutSize(s, pos + n);
     }
 
     inline void LayoutWrite(StringLayout& s, String::CharType ch, StringLayout::SizeType pos, StringLayout::SizeType n)
@@ -208,7 +235,6 @@ namespace ne
         auto sz = LayoutSize(s);
         auto ptr = LayoutData(s);
         std::memset(ptr + pos, ch, n);
-        if (pos + n > sz) SetLayoutSize(s, pos + n);
     }
 
     inline void LayoutReserve(StringLayout& s, String::SizeType n, Allocator& allocator)
@@ -233,11 +259,12 @@ namespace ne
 
     inline void LayoutSqueeze(StringLayout& s, Allocator& alloc) {
         auto sz = LayoutSize(s);
-        if (sz < StringLayout::SHORT_BYTES) {
+        if (sz <= StringLayout::SHORT_BYTES) {
             if (IsLargeLayout(s)) {
                 auto ptr = LayoutData(s);
                 ToShortLayout(s);
                 LayoutWrite(s, ptr, 0, sz);
+                SetLayoutSize(s, sz);
                 alloc.deallocate(ptr);
             }
         }
@@ -245,67 +272,122 @@ namespace ne
             auto ptr = LayoutData(s);
             LayoutAlloc(s, sz, alloc);
             LayoutWrite(s, ptr, 0, sz);
+            SetLayoutSize(s, sz);
             alloc.deallocate(ptr);
         }
     }
 
-    inline void LayoutReplace(StringLayout& s, const char* str, StringLayout::SizeType len, StringLayout::SizeType pos, StringLayout::SizeType n, Allocator allocator)
-    {
+    //inline void LayoutReplace(StringLayout& s, const char* str, StringLayout::SizeType len, StringLayout::SizeType pos, StringLayout::SizeType n, Allocator allocator)
+    //{
+    //    auto old_sz = LayoutSize(s);
+    //    auto data = LayoutData(s);
+    //    if (n > len) {
+    //        auto ptr = data + pos + len;
+    //        auto diff = n - len;
+    //        for (String::SizeType i = old_sz - pos - n; i < old_sz - diff; i++) {
+    //            *ptr = *(ptr + diff);
+    //            ++ptr;
+    //        }
+    //        memcpy(data + pos, str, len);
+    //        SetLayoutSize(s, old_sz - diff);
+    //    }
+    //    else {
+    //        auto diff = len - n;
+    //        auto new_sz = old_sz + diff;
+    //        TryExpandLayout(s, new_sz, allocator);
+    //        auto data = LayoutData(s);
+    //        auto ptr = data + diff + old_sz - 1;
+    //        while (ptr != data + pos + len - 1) {
+    //            *ptr = *(ptr - diff);
+    //            --ptr;
+    //        }
+    //        memcpy(data + pos, str, len);
+    //        SetLayoutSize(s, new_sz);
+    //    }
+    //}
+
+    //inline void LayoutReplace(StringLayout& s, char ch, StringLayout::SizeType count, StringLayout::SizeType pos, StringLayout::SizeType n, Allocator allocator)
+    //{
+    //    auto old_sz = LayoutSize(s);
+    //    auto data = LayoutData(s);
+    //    if (n > count) {
+    //        auto ptr = data + pos + count;
+    //        auto diff = n - count;
+    //        for (StringLayout::SizeType i = old_sz - pos - n; i < old_sz - diff; i++) {
+    //            *ptr = *(ptr + diff);
+    //            ++ptr;
+    //        }
+    //        auto data = LayoutData(s);
+    //        memset(data + pos, ch, count);
+    //        SetLayoutSize(s, old_sz - diff);
+    //    }
+    //    else {
+    //        auto diff = count - n;
+    //        auto new_sz = old_sz + diff;
+    //        TryExpandLayout(s, new_sz, allocator);
+    //        auto data = LayoutData(s);
+    //        auto ptr = data + diff + old_sz - 1;
+    //        while (ptr != data + pos + count-1) {
+    //            *ptr = *(ptr - diff);
+    //            --ptr;
+    //        }
+    //        memset(data + pos, ch, count);
+    //        SetLayoutSize(s, new_sz);
+    //    }
+    //}
+
+    inline void LayoutReplace(StringLayout& s, const char* str, StringLayout::SizeType len, StringLayout::SizeType pos, StringLayout::SizeType n) {
         auto old_sz = LayoutSize(s);
         auto data = LayoutData(s);
-        if (n > len) {
-            auto ptr = data + pos + len;
+        if (len < n) {
             auto diff = n - len;
-            for (String::SizeType i = old_sz - pos - n; i < old_sz - diff; i++) {
-                *ptr = *(ptr + diff);
+            auto ptr = data + pos + len;
+            auto second_ptr = data + pos + diff + len;
+            auto end_ptr = data + old_sz;
+            while (second_ptr != end_ptr) {
+                *ptr = *second_ptr;
                 ++ptr;
+                ++second_ptr;
             }
-            memcpy(data + pos, str, len);
-            SetLayoutSize(s, old_sz - diff);
         }
         else {
             auto diff = len - n;
-            auto new_sz = old_sz + diff;
-            TryExpandLayout(s, new_sz, allocator);
-            auto data = LayoutData(s);
-            auto ptr = data + diff + old_sz - 1;
-            while (ptr != data + pos + len - 1) {
-                *ptr = *(ptr - diff);
+            auto ptr = data + old_sz + diff - 1;
+            auto second_ptr = data + old_sz - 1;
+            while (second_ptr != data+pos-1) {
+                *ptr = *second_ptr;
                 --ptr;
+                --second_ptr;
             }
-            memcpy(data + pos, str, len);
-            SetLayoutSize(s, new_sz);
         }
+        memcpy(data + pos, str, len);
     }
 
-    inline void LayoutReplace(StringLayout& s, char ch, StringLayout::SizeType count, StringLayout::SizeType pos, StringLayout::SizeType n, Allocator allocator)
-    {
+    inline void LayoutReplace(StringLayout& s, char ch, StringLayout::SizeType len, StringLayout::SizeType pos, StringLayout::SizeType n) {
         auto old_sz = LayoutSize(s);
         auto data = LayoutData(s);
-        if (n > count) {
-            auto ptr = data + pos + count;
-            auto diff = n - count;
-            for (StringLayout::SizeType i = old_sz - pos - n; i < old_sz - diff; i++) {
-                *ptr = *(ptr + diff);
+        if (len < n) {
+            auto diff = n - len;
+            auto ptr = data + pos + len;
+            auto second_ptr = data + pos + diff + len;
+            auto end_ptr = data + old_sz;
+            while (second_ptr != end_ptr) {
+                *ptr = *second_ptr;
                 ++ptr;
+                ++second_ptr;
             }
-            auto data = LayoutData(s);
-            memset(data + pos, ch, count);
-            SetLayoutSize(s, old_sz - diff);
         }
         else {
-            auto diff = count - n;
-            auto new_sz = old_sz + diff;
-            TryExpandLayout(s, new_sz, allocator);
-            auto data = LayoutData(s);
-            auto ptr = data + diff + old_sz - 1;
-            while (ptr != data + pos + count-1) {
-                *ptr = *(ptr - diff);
+            auto diff = len - n;
+            auto ptr = data + old_sz + diff - 1;
+            auto second_ptr = data + old_sz - 1;
+            while (second_ptr != data + pos - 1) {
+                *ptr = *second_ptr;
                 --ptr;
+                --second_ptr;
             }
-            memset(data + pos, ch, count);
-            SetLayoutSize(s, new_sz);
         }
+        memset(data + pos, ch, len);
     }
 
     // TODO: TO SMALL LAYOUT WHEN REMOVE TOO MUCH CHARACTOR
@@ -313,12 +395,13 @@ namespace ne
     {
         auto sz = LayoutSize(s);
         auto ptr = LayoutData(s);
-        for (auto i = n; i > 0; i--) {
+        ptr += pos;
+        for (int i = 0; i < sz - n; i++) {
             *ptr = *(ptr + n);
             ++ptr;
         }
         SetLayoutSize(s, sz - n);
-        if (LayoutSize(s) < StringLayout::SHORT_BYTES) {
+        if (IsLargeLayout(s) &&  LayoutSize(s) < StringLayout::SHORT_BYTES) {
             LayoutSqueeze(s, alloc);
         }
     }
@@ -330,16 +413,17 @@ namespace ne
 
     inline void LayoutDeepCopy(StringLayout& dst, const StringLayout& from, Allocator& allocator)
     {
-        LayoutWrite(dst, LayoutData(from), 0, LayoutSize(from), allocator);
+        auto sz = LayoutSize(from);
+        LayoutReserve(dst, sz, allocator);
+        LayoutWrite(dst, LayoutData(from), 0, sz);
+        SetLayoutSize(dst, sz);
     }
 
-    void String::setEndTag(SizeType pos)
-    {
-        LayoutWrite(this->layout, '\0', pos, 1);
-    }
-    void String::setEndTag()
-    {
-        setEndTag(size());
+    inline void LayoutSwap(StringLayout& s1, StringLayout& s2) {
+        StringLayout temp;
+        memcpy(temp.layout.raw, s1.layout.raw, StringLayout::LAYOUT_BYTES);
+        memcpy(s1.layout.raw, s2.layout.raw, StringLayout::LAYOUT_BYTES);
+        memcpy(s2.layout.raw, temp.layout.raw, StringLayout::LAYOUT_BYTES);
     }
 
     String::String()
@@ -355,16 +439,8 @@ namespace ne
     }
 
     String::String(SizeType count, CharType ch)
-        : allocator()
-    {
-        if (count < 0) [[unlikely]]
-            {
-                throw InvalidArgument{ "[ntl.string.string] Invalid argument, count can not be less than 0." };
-            }
-            InitLayout(this->layout, count, this->allocator);
-            LayoutWrite(this->layout, ch, 0, count);
-            setEndTag();
-    }
+        : String(count, ch, Allocator())
+    {}
 
     String::String(SizeType count, CharType ch, const Allocator& allocator)
         : allocator(allocator)
@@ -373,9 +449,10 @@ namespace ne
             {
                 throw InvalidArgument{ "[ntl.string.string] Invalid argument, count can not be less than 0." };
             }
-            InitLayout(this->layout, count, this->allocator);
+            InitLayout(this->layout, count + 1, this->allocator);
             LayoutWrite(this->layout, ch, 0, count);
-            setEndTag();
+            SetLayoutSize(this->layout, count + 1);
+            LayoutEnd0(this->layout);
     }
 
     String::String(const String& str)
@@ -386,17 +463,8 @@ namespace ne
     }
 
     String::String(const String& str, SizeType count)
-        : allocator(str.allocator)
-    {
-        if (count < 0) [[unlikely]]
-            {
-                throw InvalidArgument{ "[ntl.string.string] Invalid argument, count can not be less than 0." };
-            }
-            auto n = str.size() < count ? str.size() : count;
-            InitLayout(this->layout, n, this->allocator);
-            LayoutWrite(this->layout, LayoutData(str.layout), 0, n);
-            setEndTag();
-    }
+        : String(str, count, Allocator())
+    {}
 
     String::String(const String& str, SizeType count, const Allocator& allocator)
         : allocator(allocator)
@@ -406,61 +474,54 @@ namespace ne
                 throw InvalidArgument{ "[ntl.string.string] Invalid argument, count can not be less than 0." };
             }
             auto n = str.size() < count ? str.size() : count;
-            InitLayout(this->layout, n, this->allocator);
+            InitLayout(this->layout, n+1, this->allocator);
             LayoutWrite(this->layout, LayoutData(str.layout), 0, n);
-            setEndTag();
+            SetLayoutSize(this->layout, n + 1);
+            LayoutEnd0(this->layout);
     }
 
     String::String(const char* str)
         : allocator()
     {
         auto n = std::strlen(str);
-        InitLayout(this->layout, n, this->allocator);
+        InitLayout(this->layout, n+1, this->allocator);
         LayoutWrite(this->layout, str, 0, n + 1);
+        SetLayoutSize(layout, n + 1);
+        LayoutEnd0(layout);
     }
 
     String::String(const char* str, SizeType count)
-        : allocator()
-    {
-        //auto sz = std::strlen(str);
-        //sz = sz < count ? sz : count;
-        if (count < 0) [[unlikely]]
-            {
-                throw InvalidArgument{ "[ntl.string.string] Invalid argument, count can not be less than 0." };
-            }
-            auto sz = count;
-            InitLayout(this->layout, sz, this->allocator);
-            LayoutWrite(this->layout, str, 0, sz, allocator);
-            setEndTag();
-    }
+        : String(str, count, Allocator())
+    {}
 
     String::String(const char* str, const Allocator& allocator)
         : allocator(allocator)
     {
         auto n = std::strlen(str);
-        InitLayout(this->layout, n, this->allocator);
+        InitLayout(this->layout, n+1, this->allocator);
         LayoutWrite(this->layout, str, 0, n + 1);
+        SetLayoutSize(layout, n + 1);
+        LayoutEnd0(layout);
     }
 
     String::String(const char* str, SizeType count, const Allocator& allocator)
         : allocator(allocator)
     {
-        //auto sz = std::strlen(str);
-        //sz = sz < count ? sz : count;
-        // str like "asda\0asdad"
         if (count < 0) [[unlikely]]
-            {
-                throw InvalidArgument{ "[ntl.string.string] Invalid argument, count can not be less than 0." };
-            }
-            auto sz = count;
-            InitLayout(this->layout, sz, this->allocator);
-            LayoutWrite(this->layout, str, 0, sz);
-            setEndTag();
+        {
+            throw InvalidArgument{ "[ntl.string.string] Invalid argument, count can not be less than 0." };
+        }
+        auto sz = count;
+        InitLayout(this->layout, sz+1, this->allocator);
+        LayoutWrite(this->layout, str, 0, sz);
+        SetLayoutSize(layout, sz + 1);
+        LayoutEnd0(layout);
     }
 
     String::String(String&& str) noexcept
         : allocator(Move(str.allocator))
     {
+        
         LayoutShallowCopy(this->layout, str.layout);
         InitLayout(str.layout);
     }
@@ -472,20 +533,24 @@ namespace ne
     String& String::assign(SizeType n, char ch)
     {
         if (n < 0) [[unlikely]]
-            {
-                throw InvalidArgument{ "[ntl.string.string] Invalid argument, count can not be less than 0." };
-            }
-            clear();
-            LayoutWrite(this->layout, ch, 0, n, allocator);
-            setEndTag();
-            return *this;
+        {
+            throw InvalidArgument{ "[ntl.string.string] Invalid argument, count can not be less than 0." };
+        }
+        clear();
+        TryNewSuitableLayout(this->layout, n + 1, allocator);
+        LayoutWrite(this->layout, ch, 0, n);
+        SetLayoutSize(layout, n + 1);
+        LayoutEnd0(layout);
+        return *this;
     }
 
     String& String::assign(const String& str)
     {
         clear();
-        LayoutWrite(this->layout, str.cstr(), 0, str.size(), allocator);
-        setEndTag();
+        TryNewSuitableLayout(layout, str.size() + 1, allocator);
+        LayoutWrite(this->layout, str.cstr(), 0, str.size());
+        SetLayoutSize(layout, str.size() + 1);
+        LayoutEnd0(layout);
         return *this;
     }
     String& String::assign(const String& str, SizeType count)
@@ -497,8 +562,10 @@ namespace ne
         }
         clear();
         auto n = count < str.size() ? count : str.size();
-        LayoutWrite(this->layout, str.cstr(), 0, n, allocator);
-        setEndTag();
+        TryNewSuitableLayout(layout, n + 1, allocator);
+        LayoutWrite(this->layout, str.cstr(), 0, n);
+        SetLayoutSize(layout, n + 1);
+        LayoutEnd0(layout);
         return *this;
     }
     String& String::assign(String&& str)
@@ -513,7 +580,6 @@ namespace ne
         {
             LayoutDeepCopy(this->layout, str.layout, allocator);
             ReleaseLayout(str.layout, str.allocator);
-            setEndTag();
         }
         return *this;
     }
@@ -521,7 +587,10 @@ namespace ne
     {
         clear();
         auto n = std::strlen(str);
-        LayoutWrite(this->layout, str, 0, n + 1, allocator);
+        TryNewSuitableLayout(layout, n + 1, allocator);
+        LayoutWrite(this->layout, str, 0, n + 1);
+        SetLayoutSize(layout, n + 1);
+        LayoutEnd0(layout);
         return *this;
     }
 
@@ -533,8 +602,10 @@ namespace ne
         }
         clear();
         auto n = count;
-        LayoutWrite(this->layout, str, 0, n, allocator);
-        setEndTag();
+        TryNewSuitableLayout(layout, n + 1, allocator);
+        LayoutWrite(this->layout, str, 0, n);
+        SetLayoutSize(layout, n + 1);
+        LayoutEnd0(layout);
         return *this;
     }
 
@@ -594,7 +665,7 @@ namespace ne
     String::SizeType String::size() const noexcept
     {
         auto sz = LayoutSize(layout) - 1;
-        return sz > 0 ? sz : 0;
+        return sz;
     }
     String::SizeType String::capacity() const noexcept
     {
@@ -605,14 +676,10 @@ namespace ne
     {
         return size() == 0;
     }
-    bool String::isNull() const noexcept
-    {
-        return LayoutSize(layout) == 0;
-    }
 
     void String::reserve(SizeType n)
     {
-        LayoutReserve(this->layout, n, allocator);
+        LayoutReserve(this->layout, n+1, allocator);
     }
 
     String::Reference String::at(SizeType i)
@@ -711,23 +778,42 @@ namespace ne
     String& String::append(const String& str)
     {
         auto ptr = LayoutData(str.layout);
-        LayoutWrite(layout, ptr, size(), str.size(), allocator);
-        setEndTag();
+        auto new_sz = size() + str.size();
+        TryExpandLayout(layout, new_sz + 1, allocator);
+        LayoutWrite(layout, ptr, size(), str.size());
+        SetLayoutSize(layout, new_sz + 1);
+        LayoutEnd0(layout);
         return *this;
     }
 
     String& String::append(CharType ch)
     {
-        LayoutWrite(layout, ch, size(), 1, allocator);
-        setEndTag();
+        auto new_sz = size() + 1;
+        TryExpandLayout(layout, new_sz + 1, allocator);
+        LayoutWrite(layout, ch, size(), 1);
+        SetLayoutSize(layout, new_sz + 1);
+        LayoutEnd0(layout);
+        return *this;
+    }
+
+    String& String::append(SizeType n, CharType ch)
+    {
+        auto new_sz = size() + n;
+        TryExpandLayout(layout, new_sz + 1, allocator);
+        LayoutWrite(layout, ch, size(), n);
+        SetLayoutSize(layout, new_sz + 1);
+        LayoutEnd0(layout);
         return *this;
     }
 
     String& String::append(const char* str)
     {
         auto sz = std::strlen(str);
-        LayoutWrite(layout, str, size(), sz, allocator);
-        setEndTag();
+        auto new_sz = sz + size();
+        TryExpandLayout(layout, new_sz + 1, allocator);
+        LayoutWrite(layout, str, size(), sz);
+        SetLayoutSize(layout, new_sz + 1);
+        LayoutEnd0(layout);
         return *this;
     }
 
@@ -737,13 +823,16 @@ namespace ne
         sz = len < sz ? len : sz;*/
 
         if (len < 0) [[unlikely]]
-            {
-                throw InvalidArgument{ "[ntl.string.string] Invalid argument, len can not be less than 0." };
-            }
-            auto sz = len;
-            LayoutWrite(layout, str, size(), sz, allocator);
-            setEndTag();
-            return *this;
+        {
+            throw InvalidArgument{ "[ntl.string.string] Invalid argument, len can not be less than 0." };
+        }
+        auto sz = len;
+        auto new_sz = sz + size();
+        TryExpandLayout(layout, new_sz + 1, allocator);
+        LayoutWrite(layout, str, size(), sz);
+        SetLayoutSize(layout, new_sz + 1);
+        LayoutEnd0(layout);
+        return *this;
     }
 
     String& String::operator+=(const String& str)
@@ -764,23 +853,37 @@ namespace ne
     String& String::prepend(const String& str)
     {
         auto ptr = str.cstr();
-        LayoutReplace(layout, ptr, str.size(), 0, 0, allocator);
-        setEndTag();
+        auto new_sz = str.size() + size();
+        TryExpandLayout(layout, new_sz + 1, allocator);
+        LayoutReplace(layout, ptr, str.size(), 0, 0);
+        SetLayoutSize(layout, new_sz + 1);
+        LayoutEnd0(layout);
         return *this;
     }
 
     String& String::prepend(CharType ch)
     {
-        LayoutReplace(layout, ch, 1, 0, 0, allocator);
-        setEndTag();
+        return prepend(1, ch);
+    }
+
+    String& String::prepend(SizeType n, CharType ch)
+    {
+        auto new_sz = size() + n;
+        TryExpandLayout(layout, new_sz + 1, allocator);
+        LayoutReplace(layout, ch, n, 0, 0);
+        SetLayoutSize(layout, new_sz + 1);
+        LayoutEnd0(layout);
         return *this;
     }
 
     String& String::prepend(const char* str)
     {
         auto sz = std::strlen(str);
-        LayoutReplace(layout, str, sz, 0, 0, allocator);
-        setEndTag();
+        auto new_sz = sz + size();
+        TryExpandLayout(layout, new_sz + 1, allocator);
+        LayoutReplace(layout, str, sz, 0, 0);
+        SetLayoutSize(layout, new_sz + 1);
+        LayoutEnd0(layout);
         return *this;
     }
 
@@ -790,13 +893,16 @@ namespace ne
         //sz = count < sz ? count : sz;
 
         if (count < 0) [[unlikely]]
-            {
-                throw InvalidArgument{ "[ntl.string.string] Invalid argument, count can not be less than 0." };
-            }
-            auto sz = count;
-            LayoutReplace(layout, str, count, 0, 0, allocator);
-            setEndTag();
-            return *this;
+        {
+            throw InvalidArgument{ "[ntl.string.string] Invalid argument, count can not be less than 0." };
+        }
+        auto sz = count;
+        auto new_sz = sz + size();
+        TryExpandLayout(layout, new_sz + 1, allocator);
+        LayoutReplace(layout, str, sz, 0, 0);
+        SetLayoutSize(layout, new_sz + 1);
+        LayoutEnd0(layout);
+        return *this;
     }
 
     bool String::contains(const String& str) const noexcept
@@ -1166,41 +1272,55 @@ namespace ne
     {
 
         if (pos > size() || pos < -size()) [[unlikely]]
-            {
-                throw OutOfRange{ "[ntl.string.string] Param pos is out of range." };
-            }
-            pos = pos >= 0 ? pos : size() + pos;
-            LayoutReplace(layout, str.cstr(), str.size(), pos, 0, allocator);
-            return *this;
+        {
+            throw OutOfRange{ "[ntl.string.string] Param pos is out of range." };
+        }
+        pos = pos >= 0 ? pos : size() + pos;
+        auto new_size = str.size() + size();
+        TryExpandLayout(layout, new_size + 1, allocator);
+        LayoutReplace(layout, str.cstr(), str.size(), pos, 0);
+        SetLayoutSize(layout, new_size + 1);
+        LayoutEnd0(layout);
+        return *this;
     }
 
     String& String::insert(SizeType pos, const char* str)
     {
 
         if (pos > size() || pos < -size()) [[unlikely]]
-            {
-                throw OutOfRange{ "[ntl.string.string] Param pos is out of range." };
-            }
-            pos = pos >= 0 ? pos : size() + pos;
-            LayoutReplace(layout, str, std::strlen(str), pos, 0, allocator);
-            return *this;
+        {
+            throw OutOfRange{ "[ntl.string.string] Param pos is out of range." };
+        }
+        auto sz = strlen(str);
+        pos = pos >= 0 ? pos : size() + pos;
+        auto new_size = sz + size();
+        TryExpandLayout(layout, new_size + 1, allocator);
+        LayoutReplace(layout, str, sz, pos, 0);
+        SetLayoutSize(layout, new_size + 1);
+        LayoutEnd0(layout);
+        return *this;
     }
 
     String& String::insert(SizeType pos, CharType ch, SizeType count)
     {
 
         if (pos > size() || pos < -size()) [[unlikely]]
-            {
-                throw OutOfRange{ "[ntl.string.string] Param pos is out of range." };
-            }
+        {
+            throw OutOfRange{ "[ntl.string.string] Param pos is out of range." };
+        }
 
-                if (count < 0) [[unlikely]]
-                    {
-                        throw InvalidArgument{ "[ntl.string.string] Invalid argument, count can not be less than 0." };
-                    }
-                    pos = pos >= 0 ? pos : size() + pos;
-                    LayoutReplace(layout, ch, count, pos, 0, allocator);
-                    return *this;
+        if (count < 0) [[unlikely]]
+        {
+            throw InvalidArgument{ "[ntl.string.string] Invalid argument, count can not be less than 0." };
+        }
+        auto sz = count;
+        pos = pos >= 0 ? pos : size() + pos;
+        auto new_size = sz + size();
+        TryExpandLayout(layout, new_size + 1, allocator);
+        LayoutReplace(layout, ch, sz, pos, 0);
+        SetLayoutSize(layout, new_size + 1);
+        LayoutEnd0(layout);
+        return *this;
     }
 
     auto String::insert(ConstIterator it, const String& str)->Iterator
@@ -1227,44 +1347,72 @@ namespace ne
         auto sz = str.size();
 
         if (pos >= size() || pos < -size()) [[unlikely]]
-            {
-                throw OutOfRange{ "[ntl.string.string] Param pos is out of range." };
+        {
+            throw OutOfRange{ "[ntl.string.string] Param pos is out of range." };
+        }
+
+        if (n < 0) [[unlikely]]
+        {
+            throw InvalidArgument{ "[ntl.string.string] Invalid argument, n can not be less than 0." };
+        }
+
+        if (n > size() - pos - n) [[unlikely]]
+        {
+            throw OutOfRange{ "[ntl.string.string] Param n is out of range." };
+        }
+        pos = pos >= 0 ? pos : size() + pos;
+        auto new_sz = str.size() + size() - n;
+        if (n < str.size()) {
+            TryExpandLayout(layout, new_sz + 1, allocator);
+            LayoutReplace(layout, str.cstr(), sz, pos, n);
+            SetLayoutSize(layout, new_sz + 1);
+            LayoutEnd0(layout);
+        }
+        else {
+            LayoutReplace(layout, str.cstr(), sz, pos, n);
+            SetLayoutSize(layout, new_sz + 1);
+            LayoutEnd0(layout);
+            if (LayoutSize(layout) <= StringLayout::SHORT_BYTES) {
+                LayoutSqueeze(layout, allocator);
             }
-
-                if (n < 0) [[unlikely]]
-                    {
-                        throw InvalidArgument{ "[ntl.string.string] Invalid argument, n can not be less than 0." };
-                    }
-
-                        if (n > size() - pos - n) [[unlikely]]
-                            {
-                                throw OutOfRange{ "[ntl.string.string] Param n is out of range." };
-                            }
-                            pos = pos >= 0 ? pos : size() + pos;
-                            LayoutReplace(layout, str.cstr(), sz, pos, n, allocator);
-                            return *this;
+        }
+        return *this;
     }
 
     String& String::replace(SizeType pos, SizeType n, CharType ch, SizeType count)
     {
 
         if (pos >= size() || pos < -size()) [[unlikely]]
-            {
-                throw OutOfRange{ "[ntl.string.string] Param pos is out of range." };
+        {
+            throw OutOfRange{ "[ntl.string.string] Param pos is out of range." };
+        }
+
+        if (n < 0) [[unlikely]]
+        {
+            throw InvalidArgument{ "[ntl.string.string] Invalid argument, n can not be less than 0." };
+        }
+
+        if (n > size() - pos - n) [[unlikely]]
+        {
+            throw OutOfRange{ "[ntl.string.string] Param n is out of range." };
+        }
+        pos = pos >= 0 ? pos : size() + pos;
+        auto new_sz = count + size() - n;
+        if (n < count) {
+            TryExpandLayout(layout, new_sz + 1, allocator);
+            LayoutReplace(layout, ch, count, pos, n);
+            SetLayoutSize(layout, new_sz + 1);
+            LayoutEnd0(layout);
+        }
+        else {
+            LayoutReplace(layout, ch, count, pos, n);
+            SetLayoutSize(layout, new_sz + 1);
+            LayoutEnd0(layout);
+            if (LayoutSize(layout) <= StringLayout::SHORT_BYTES) {
+                LayoutSqueeze(layout, allocator);
             }
-
-                if (n < 0) [[unlikely]]
-                    {
-                        throw InvalidArgument{ "[ntl.string.string] Invalid argument, n can not be less than 0." };
-                    }
-
-                        if (n > size() - pos - n) [[unlikely]]
-                            {
-                                throw OutOfRange{ "[ntl.string.string] Param n is out of range." };
-                            }
-                            pos = pos >= 0 ? pos : size() + pos;
-                            LayoutReplace(layout, ch, count, pos, n, allocator);
-                            return *this;
+        }
+        return *this;
     }
 
     String& String::replace(SizeType pos, SizeType n, const char* str)
@@ -1272,44 +1420,58 @@ namespace ne
         auto sz = std::strlen(str);
 
         if (pos >= size() || pos < -size()) [[unlikely]]
-            {
-                throw OutOfRange{ "[ntl.string.string] Param pos is out of range." };
+        {
+            throw OutOfRange{ "[ntl.string.string] Param pos is out of range." };
+        }
+
+        if (n < 0) [[unlikely]]
+        {
+            throw InvalidArgument{ "[ntl.string.string] Invalid argument, n can not be less than 0." };
+        }
+
+        if (n > size() - pos - n) [[unlikely]]
+        {
+            throw OutOfRange{ "[ntl.string.string] Param n is out of range." };
+        }
+        pos = pos >= 0 ? pos : size() + pos;
+        auto new_sz = sz + size() - n;
+        if (n < sz) {
+            TryExpandLayout(layout, new_sz + 1, allocator);
+            LayoutReplace(layout, str, sz, pos, n);
+            SetLayoutSize(layout, new_sz + 1);
+            LayoutEnd0(layout);
+        }
+        else {
+            LayoutReplace(layout, str, sz, pos, n);
+            SetLayoutSize(layout, new_sz + 1);
+            LayoutEnd0(layout);
+            if (LayoutSize(layout) <= StringLayout::SHORT_BYTES) {
+                LayoutSqueeze(layout, allocator);
             }
-
-                if (n < 0) [[unlikely]]
-                    {
-                        throw InvalidArgument{ "[ntl.string.string] Invalid argument, n can not be less than 0." };
-                    }
-
-                        if (n > size() - pos - n) [[unlikely]]
-                            {
-                                throw OutOfRange{ "[ntl.string.string] Param n is out of range." };
-                            }
-                            pos = pos >= 0 ? pos : size() + pos;
-                            LayoutReplace(layout, str, sz, pos, n, allocator);
-                            return *this;
+        }
+        return *this;
     }
 
     String& String::remove(SizeType pos, SizeType n)
     {
 
         if (pos >= size() || pos < -size()) [[unlikely]]
-            {
-                throw OutOfRange{ "[ntl.string.string] Param pos is out of range." };
-            }
+        {
+            throw OutOfRange{ "[ntl.string.string] Param pos is out of range." };
+        }
 
-                if (n < 0) [[unlikely]]
-                    {
-                        throw InvalidArgument{ "[ntl.string.string] Invalid argument, n can not be less than 0." };
-                    }
+        if (n < 0) [[unlikely]]
+        {
+            throw InvalidArgument{ "[ntl.string.string] Invalid argument, n can not be less than 0." };
+        }
 
-                        if (n > size() - pos) [[unlikely]]
-                            {
-                                throw OutOfRange{ "[ntl.string.string] Param n is out of range." };
-                            }
-                            pos = pos >= 0 ? pos : size() + pos;
-                            LayoutRemove(layout, pos, n, allocator);
-                            return *this;
+        if (n > size() - pos) [[unlikely]]
+        {
+            throw OutOfRange{ "[ntl.string.string] Param n is out of range." };
+        }
+        pos = pos >= 0 ? pos : size() + pos;
+        LayoutRemove(layout, pos, n, allocator);
+        return *this;
     }
 
     String& String::remove(const String& str)
@@ -1353,30 +1515,30 @@ namespace ne
     {
 
         if (n < 0) [[unlikely]]
-            {
-                throw InvalidArgument{ "[ntl.string.string] Invalid argument, n can not be less than 0" };
-            }
+        {
+            throw InvalidArgument{ "[ntl.string.string] Invalid argument, n can not be less than 0" };
+        }
 
-                if (n > size()) [[unlikely]]
-                    {
-                        throw OutOfRange{ "[ntl.string.string] Param n is out of range" };
-                    }
-                    return String(cstr(), n, allocator);
+        if (n > size()) [[unlikely]]
+        {
+            throw OutOfRange{ "[ntl.string.string] Param n is out of range" };
+        }
+        return String(cstr(), n, allocator);
     }
 
     String String::right(SizeType n) const
     {
 
         if (n < 0) [[unlikely]]
-            {
-                throw InvalidArgument{ "[ntl.string.string] Invalid argument, n can not be less than 0" };
-            }
+        {
+            throw InvalidArgument{ "[ntl.string.string] Invalid argument, n can not be less than 0" };
+        }
 
-                if (n > size()) [[unlikely]]
-                    {
-                        throw OutOfRange{ "[ntl.string.string] Param n is out of range" };
-                    }
-                    return String(cstr() + size() - n, n, allocator);
+        if (n > size()) [[unlikely]]
+        {
+            throw OutOfRange{ "[ntl.string.string] Param n is out of range" };
+        }
+        return String(cstr() + size() - n, n, allocator);
     }
 
     String String::repeat(SizeType n) const
@@ -1393,22 +1555,25 @@ namespace ne
     String& String::fill(CharType ch, SizeType num)
     {
         clear();
-        LayoutWrite(layout, ch, 0, num, allocator);
+        TryNewSuitableLayout(layout, num + 1, allocator);
+        LayoutWrite(layout, ch, 0, num);
+        SetLayoutSize(layout, num + 1);
+        LayoutEnd0(layout);
         return *this;
     }
 
     String String::trimmed() const
     {
         auto isSpace = [](char c) -> bool
-            {
-                return c == ' ' || c == '\t' || c == '\v' || c == '\n' || c == '\f' || c == '\r';
-            };
+        {
+            return c == ' ' || c == '\t' || c == '\v' || c == '\n' || c == '\f' || c == '\r';
+        };
 
         SizeType b = 0;
         SizeType e = 0;
         if (b + e >= size()) return String(allocator);
-        for (; !isSpace(*(begin() + b)); ++b);
-        for (; !isSpace(*(rbegin() + e)); ++e);
+        for (; isSpace(*(begin() + b)); ++b);
+        for (; isSpace(*(rbegin() + e)); ++e);
         return String(cstr() + b, size() - e - b, allocator);
     }
 
@@ -1441,11 +1606,11 @@ namespace ne
     {
 
         if (pos > size() || pos < -size()) [[unlikely]]
-            {
-                throw OutOfRange{ "[ntl.string.string] Param pos is out of range." };
-            }
-            pos = (pos + size()) % size();
-            return String(cstr() + pos, size() - pos, allocator);
+        {
+            throw OutOfRange{ "[ntl.string.string] Param pos is out of range." };
+        }
+        pos = (pos + size()) % size();
+        return String(cstr() + pos, size() - pos, allocator);
     }
 
     String String::sliced(SizeType pos, SizeType n) const
@@ -1453,46 +1618,46 @@ namespace ne
         // Check param
 
         if (pos > size() || pos < -size()) [[unlikely]]
-            {
-                throw OutOfRange{ "[ntl.string.string] Param pos is out of range." };
-            }
+        {
+            throw OutOfRange{ "[ntl.string.string] Param pos is out of range." };
+        }
 
-                if (n < 0) [[unlikely]]
-                    {
-                        throw InvalidArgument{ "[ntl.string.string] Invalid argument, n can not be less than 0." };
-                    }
+        if (n < 0) [[unlikely]]
+        {
+            throw InvalidArgument{ "[ntl.string.string] Invalid argument, n can not be less than 0." };
+        }
 
-                        if (n > size() - pos) [[unlikely]]
-                            {
-                                throw OutOfRange{ "[ntl.string.string] Param n is out of range." };
-                            }
-                            pos = (pos + size()) % size();
-                            return String(cstr() + pos, n, allocator);
+        if (n > size() - pos) [[unlikely]]
+        {
+            throw OutOfRange{ "[ntl.string.string] Param n is out of range." };
+        }
+        pos = (pos + size()) % size();
+        return String(cstr() + pos, n, allocator);
     }
 
     String String::substr(SizeType pos, SizeType n) const
     {
 
         if (pos > size() || pos < -size()) [[unlikely]]
-            {
-                throw OutOfRange{ "[ntl.string.string] Param pos is out of range." };
-            }
+        {
+            throw OutOfRange{ "[ntl.string.string] Param pos is out of range." };
+        }
 
-                if (n < -1) [[unlikely]]
-                    {
-                        throw InvalidArgument{ "[ntl.string.string] Invalid argument, n can not be less than -1." };
-                    }
+        if (n < -1) [[unlikely]]
+        {
+            throw InvalidArgument{ "[ntl.string.string] Invalid argument, n can not be less than -1." };
+        }
 
-                        if (n > size() - pos) [[unlikely]]
-                            {
-                                throw OutOfRange{ "[ntl.string.string] Param n is out of range." };
-                            }
-                            pos = (pos + size()) % size();
-                            if (n == NPOS)
-                            {
-                                return String(cstr() + pos, size() - pos, allocator);
-                            }
-                            return String(cstr() + pos, n, allocator);
+        if (n > size() - pos) [[unlikely]]
+        {
+            throw OutOfRange{ "[ntl.string.string] Param n is out of range." };
+        }
+        pos = (pos + size()) % size();
+        if (n == NPOS)
+        {
+            return String(cstr() + pos, size() - pos, allocator);
+        }
+        return String(cstr() + pos, n, allocator);
     }
 
     Optional<int> String::toInt()
@@ -1581,5 +1746,42 @@ namespace ne
         s.reserve(str.size() + xsz);
         s.append(str).append(x);
         return x;
+    }
+
+    void String::swap(String& str) {
+        if (allocator == str.allocator) {
+            LayoutSwap(layout, str.layout);
+        }
+        else {
+            auto s1 = IsSmallLayout(layout), s2 = IsSmallLayout(str.layout);
+            if (s1 && s2) {
+                LayoutSwap(layout, str.layout);
+            }
+            else if (s1 && (!s2)) {
+                auto ptr = LayoutData(str.layout);
+                auto sz = LayoutSize(str.layout);
+                LayoutSwap(layout, str.layout);
+                ToLargeLayout(layout);
+                LayoutAlloc(layout, sz, allocator);
+                LayoutWrite(layout, ptr, 0, sz);
+                SetLayoutSize(layout, sz);
+                str.allocator.deallocate(ptr);
+            }
+            else if ((!s1) && s2) {
+                auto ptr = LayoutData(layout);
+                auto sz = LayoutSize(layout);
+                LayoutSwap(layout, str.layout);
+                ToLargeLayout(str.layout);
+                LayoutAlloc(str.layout, sz, str.allocator);
+                LayoutWrite(str.layout, ptr, 0, sz);
+                SetLayoutSize(str.layout, sz);
+                allocator.deallocate(ptr);
+            }
+            else {
+                String temp = Move(str);
+                str = Move((*this));
+                *this = Move(temp);
+            }
+        }
     }
 }

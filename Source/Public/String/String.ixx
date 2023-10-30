@@ -76,8 +76,6 @@ export namespace ne
 		using Layout = StringLayout;
 		Allocator allocator;
 		Layout layout;
-		void setEndTag(SizeType pos);
-		void setEndTag();
 	public:
 		static constexpr SizeType NPOS = -1;
 
@@ -230,7 +228,6 @@ export namespace ne
 		SizeType capacity() const noexcept;
 
 		bool isEmpty() const noexcept;
-		bool isNull() const noexcept;
 
 		const char* cstr() const noexcept;
 
@@ -261,6 +258,7 @@ export namespace ne
 
 		String& append(const String& str);
 		String& append(CharType ch);
+		String& append(SizeType n, CharType ch);
 		//String& append(Literal str);
 		String& append(const CharType* str);
 		String& append(const CharType* str, SizeType len);
@@ -272,6 +270,7 @@ export namespace ne
 
 		String& prepend(const String& str);
 		String& prepend(CharType ch);
+		String& prepend(SizeType n, CharType ch);
 		//String& prepend(Literal str);
 		String& prepend(const CharType* str);
 		String& prepend(const CharType* str, SizeType len);
@@ -322,12 +321,12 @@ export namespace ne
 		String& insert(SizeType pos, const char* str);
 		//String& insert(SizeType pos, Literal str);
 		Iterator insert(ConstIterator iterator, const String& str);
-		Iterator insert(ConstIterator iterator, CharType ch, SizeType count);
+		Iterator insert(ConstIterator iterator, CharType ch, SizeType count=1);
 		Iterator insert(ConstIterator iterator, const char* str);
 		//Iterator insert(ConstIterator iterator, Literal str);
 
 		String& replace(SizeType pos, SizeType n, const String& str);
-		String& replace(SizeType pos, SizeType n, CharType ch, SizeType count);
+		String& replace(SizeType pos, SizeType n, CharType ch, SizeType count=1);
 		String& replace(SizeType pos, SizeType n, const char* str);
 		//String& replace(SizeType pos, SizeType n, Literal str);
 
@@ -406,6 +405,9 @@ export namespace ne
 		{
 			return String(str.c_str(), str.size());
 		}
+
+		void swap(String& str);
+		friend void Swap(String& s1, String& s2) { s1.swap(s2); }
 	};
 }
 
