@@ -7,6 +7,8 @@ namespace ne
 	It2 BruteForceSearch(It1 pf, It1 pl, It2 tf, It2 tl);
 	template<class It1, class It2>
 	It2 BoyerMooreHorspoolSearch(It1 pf, It1 pl, It2 tf, It2 tl);
+	template<class It1, class It2>
+	It2 BoyerMooreHorspoolSearch2(It1 pf, It1 pl, It2 tf, It2 tl);
 }
 
 export namespace ne
@@ -29,7 +31,7 @@ export namespace ne
 		}
 		else
 		{
-			return string_last;
+			return BoyerMooreHorspoolSearch2(pattern_first, pattern_last, string_first, string_last);
 		}
 	}
 }
@@ -87,7 +89,6 @@ namespace ne
 		{
 			return tl;
 		}
-		// TODO: better hash to avoid cache dismiss
 		
 		auto hash = [](auto x) { return (uint8)(*x); };
 
@@ -116,6 +117,48 @@ namespace ne
 		}
 		return tl;
 		
+	}
+
+	template<class It1, class It2>
+	It2 BoyerMooreHorspoolSearch2(It1 pf, It1 pl, It2 tf, It2 tl)
+	{
+		auto plen = pl - pf;
+		auto tlen = tl - tf;
+		[[unlikely]]
+		if (tlen < plen)
+		{
+			return tl;
+		}
+		// TODO: better hash to avoid cache dismiss
+
+		auto hash = [](auto x) { return (uint8)(*x); };
+
+		uint64* shift = new uint64[256];
+		for (auto i = 0; i < 256; i++)
+		{
+			shift[i] = plen;
+		}
+		for (auto i = 0; i < plen - 1; i++)
+		{
+			shift[hash(pf + i)] = plen - i - 1;
+		}
+
+		while (tf <= tl - plen)
+		{
+			int j = plen - 1;
+			while (j >= 0 && *(tf + j) == *(pf + j))
+			{
+				--j;
+			}
+			if (j < 0)
+			{
+				return tf;
+			}
+			tf += shift[hash(tf + plen - 1)];
+		}
+		delete[] shift;
+		return tl;
+
 	}
 
 }

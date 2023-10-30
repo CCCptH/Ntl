@@ -123,6 +123,12 @@ TEST(TestString, Replace) {
 	EXPECT_EQ(s2.size(), 7);
 }
 
+TEST(TestString, Find) {
+	String s1 = "123172839781923789ajhsdkjashdkaldhl1283312zxcvbnmasdfghasd98123nasdjadhajkdsha";
+	EXPECT_TRUE(s1.contains("zxcvbnmasdfgh"));
+	EXPECT_TRUE(s1.contains("zx"));
+}
+
 TEST(TestString, Remove) {
 	String s1 = "0123456789";
 	s1.remove(0, 3);
