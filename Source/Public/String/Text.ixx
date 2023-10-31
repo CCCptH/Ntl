@@ -78,23 +78,29 @@ export namespace ne
 
 		String toString() const;
 
-		Text& append(utf32 ch);
-		Text& append(char ch);
-		Text& append(utf8 ch);
+		Text& append(utf32 ch, int64 n = 1);
+		Text& append(char ch, int64 n = 1);
+		Text& append(utf8 ch, int64 n = 1);
 		Text& append(const Text& text);
 		Text& append(const utf32* str);
 		Text& append(const char* str);
 		Text& append(const utf8* str);
 		Text& append(const String& str);
 
-		Text& prepend(utf32 ch);
-		Text& prepend(char ch);
-		Text& prepend(utf8 ch);
+		Text& prepend(utf32 ch, int64 n = 1);
+		Text& prepend(char ch, int64 n = 1);
+		Text& prepend(utf8 ch, int64 n = 1);
 		Text& prepend(const Text& text);
 		Text& prepend(const utf32* str);
 		Text& prepend(const char* str);
 		Text& prepend(const utf8* str);
 		Text& prepend(const String& str);
+
+		void normalize();
+		[[nodiscard]]
+		Text normalized();
+
+		int64 refcount() const;
 
 	private:
 		friend class TextInternal;

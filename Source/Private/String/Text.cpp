@@ -47,8 +47,7 @@ namespace ne
 		static TextInternal* DecRef(TextInternal* ti)
 		{
 			auto a = ti->allocator;
-			--ti->shared;
-			if (ti->shared==0)
+			if (ti->shared.fetch_sub(1) == 0)
 			{
 				a.deallocate(ti);
 				return nullptr;
@@ -136,11 +135,12 @@ namespace ne
 	using Ti = TextInternal;
 
 	Text::Text()
-		: internal(Ti::New(0))
+		: internal(nullptr)
 	{}
 	Text::Text(const Text& text)
-		: internal(Ti::IncRef(text.internal))
-	{}
+	{
+		internal = text.internal == nullptr ? nullptr : Ti::IncRef(text.internal);
+	}
 	Text::Text(Text&& text) noexcept
 	{
 		internal = text.internal;
@@ -236,6 +236,10 @@ namespace ne
 	Text::SizeType Text::length() const noexcept
 	{
 		return size();
+	}
+
+	int64 Text::refcount() const {
+		return internal == nullptr ? 0 : internal->shared.load();
 	}
 
 	//Text::Iterator Text::begin() noexcept
@@ -351,23 +355,26 @@ namespace ne
 		return *this;
 	}
 
-	Text& Text::append(utf32 ch)
+	Text& Text::append(utf32 ch, int64 n)
 	{
 		auto sz = size();
-		auto apsz = 1;
+		auto apsz = n;
 		internal = Ti::ExtendBackwardFork(internal, apsz);
-		internal->data[sz] = ch;
+		for (int64 i = 0; i < n; i++) {
+			internal->data[sz+i] = ch;
+
+		}
 		return *this;
 	}
 
-	Text& Text::append(char ch)
+	Text& Text::append(char ch, int64 n)
 	{
-		return append(utf32(ch));
+		return append(utf32(ch), n);
 	}
 
-	Text& Text::append(utf8 ch)
+	Text& Text::append(utf8 ch, int64 n)
 	{
-		return append(utf32(ch));
+		return append(utf32(ch), n);
 	}
 
 	Text& Text::append(const Text& text)
