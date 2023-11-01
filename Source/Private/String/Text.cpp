@@ -9,6 +9,7 @@ import ntl.utils;
 import ntl.exceptions;
 import ntl.iterator.back_insert_iterator;
 
+
 namespace ne
 {
 	void Utf32Cpy(utf32* dst, const utf32* src, size_t len)
@@ -21,8 +22,15 @@ namespace ne
 	public:
 		Allocator allocator;
 		int64 len;
+		HashValue hash;
 		std::atomic<int64> shared;
 		utf32 data[];
+
+		static void ComputeHash(TextInternal* ti) {
+			Hash<__internal::BytesView> HASHER;
+			__internal::BytesView b{ ti->data, ti->len * sizeof(utf32) };
+			ti->hash = HASHER(b);
+		}
 
 		static TextInternal* New(int64 n, Allocator allocator)
 		{
@@ -59,6 +67,7 @@ namespace ne
 		{
 			auto p = New(ti->len, ti->allocator);
 			Utf32Cpy(p->data, ti->data, ti->len);
+			p->hash = ti->hash;
 			DecRef(ti);
 			return p;
 		}
@@ -67,6 +76,7 @@ namespace ne
 		{
 			auto p = New(ti->len, allocator);
 			Utf32Cpy(p->data, ti->data, ti->len);
+			p->hash = ti->hash;
 			DecRef(ti);
 			return p;
 		}
@@ -75,6 +85,7 @@ namespace ne
 		{
 			auto p = New(ti->len, ti->allocator);
 			Utf32Cpy(p->data, ti->data, ti->len);
+			p->hash = ti->hash;
 			return p;
 		}
 
@@ -82,6 +93,7 @@ namespace ne
 		{
 			auto p = New(ti->len, allocator);
 			Utf32Cpy(p->data, ti->data, ti->len);
+			p->hash = ti->hash;
 			return p;
 		}
 
@@ -190,26 +202,34 @@ namespace ne
 		for (; str[len] == utf32(); ++len);
 		internal = Ti::New(len, allocator);
 		memmove(internal->data, str, sizeof(utf32) * len);
+		Ti::ComputeHash(internal);
 	}
-	Text::Text(const char* str, const Allocator& allocator)
+	Text::Text(const char* str, int64 slen, const Allocator& allocator)
 	{
-		SizeType slen = std::strlen(str);
 		SizeType len = CountCodepointsOfUtf8(str, str + slen);
 		if (len < 0) [[unlikely]] throw InvalidArgument{ "[ntl.string.text] Error encoding" };
 
 		internal = Ti::New(len, allocator);
 		Utf8ToUtf32(internal->data, str, str + slen);
-
+		Ti::ComputeHash(internal);
 	}
-	Text::Text(const utf8* str, const Allocator& allocator)
+	Text::Text(const utf8* str, int64 slen, const Allocator& allocator)
 	{
-		SizeType slen = std::strlen(reinterpret_cast<const char*>(str));
 		SizeType len = CountCodepointsOfUtf8(str, str + slen);
 		internal = Ti::New(len, allocator);
 		Utf8ToUtf32(internal->data, str, str + slen);
+		Ti::ComputeHash(internal);
 	}
+
+	Text::Text(const char* str, const Allocator& allocator)
+		: Text(str, strlen(str), allocator)
+	{}
+	Text::Text(const utf8* str, const Allocator& allocator)
+		: Text(str, strlen(reinterpret_cast<const char*>(str)), allocator)
+	{}
+
 	Text::Text(const String& str, const Allocator& allocator)
-		: Text(str.cstr(), allocator)
+		: Text(str.cstr(), str.size(), allocator)
 	{}
 	Text::~Text()
 	{
@@ -240,6 +260,10 @@ namespace ne
 
 	int64 Text::refcount() const {
 		return internal == nullptr ? 0 : internal->shared.load();
+	}
+
+	HashValue Text::hash() const {
+		return internal == nullptr ? 0 : internal->hash;
 	}
 
 	//Text::Iterator Text::begin() noexcept
@@ -362,7 +386,6 @@ namespace ne
 		internal = Ti::ExtendBackwardFork(internal, apsz);
 		for (int64 i = 0; i < n; i++) {
 			internal->data[sz+i] = ch;
-
 		}
 		return *this;
 	}
@@ -377,12 +400,13 @@ namespace ne
 		return append(utf32(ch), n);
 	}
 
-	Text& Text::append(const Text& text)
+	Text& Text::append(Text text)
 	{
 		auto sz = size();
 		auto apsz = text.size();
 		internal = Ti::ExtendBackwardFork(internal, apsz);
 		Utf32Cpy(internal->data+sz, text.internal->data, apsz);
+		Ti::ComputeHash(internal);
 		return *this;
 	}
 
@@ -393,6 +417,7 @@ namespace ne
 		for (; str[apsz] != utf32(); ++apsz);
 		internal = Ti::ExtendBackwardFork(internal, apsz);
 		Utf32Cpy(internal->data+sz, str, apsz);
+		Ti::ComputeHash(internal);
 		return *this;
 	}
 
@@ -403,6 +428,7 @@ namespace ne
 		auto apsz = CountCodepointsOfUtf8(str, str + strsz);
 		internal = Ti::ExtendBackwardFork(internal, apsz);
 		Utf8ToUtf32(internal->data+sz, str, str + apsz);
+		Ti::ComputeHash(internal);
 		return *this;
 	}
 
@@ -418,34 +444,39 @@ namespace ne
 		auto apsz = CountCodepointsOfUtf8(str.cstr(), str.cstr() + strsz);
 		internal = Ti::ExtendBackwardFork(internal, apsz);
 		Utf8ToUtf32(internal->data + sz, str.cstr(), str.cstr() + apsz);
+		Ti::ComputeHash(internal);
 		return *this;
 	}
 
-	Text& Text::prepend(utf32 ch)
+	Text& Text::prepend(utf32 ch, int64 n)
 	{
 		auto sz = size();
 		auto apsz = 1;
 		internal = Ti::ExtendForwardFork(internal, apsz);
-		internal->data[0] = ch;
+		for (int64 i = 0; i < n; i++) {
+			internal->data[i] = ch;
+		}
+		Ti::ComputeHash(internal);
 		return *this;
 	}
 
-	Text& Text::prepend(char ch)
+	Text& Text::prepend(char ch, int64 n)
 	{
 		return prepend(utf32(ch));
 	}
 
-	Text& Text::prepend(utf8 ch)
+	Text& Text::prepend(utf8 ch, int64 n)
 	{
 		return prepend(utf32(ch));
 	}
 
-	Text& Text::prepend(const Text& text)
+	Text& Text::prepend(Text text)
 	{
 		auto sz = size();
 		auto apsz = text.size();
 		internal = Ti::ExtendForwardFork(internal, apsz);
 		Utf32Cpy(internal->data, text.internal->data, apsz);
+		Ti::ComputeHash(internal);
 		return *this;
 	}
 
@@ -456,6 +487,7 @@ namespace ne
 		for (; str[apsz] != utf32(); ++apsz);
 		internal = Ti::ExtendForwardFork(internal, apsz);
 		Utf32Cpy(internal->data, str, apsz);
+		Ti::ComputeHash(internal);
 		return *this;
 	}
 
@@ -467,6 +499,7 @@ namespace ne
 		auto apsz = CountCodepointsOfUtf8(str, str + strsz);
 		internal = Ti::ExtendForwardFork(internal, apsz);
 		Utf8ToUtf32(internal->data, str, str + apsz);
+		Ti::ComputeHash(internal);
 		return *this;
 	}
 
@@ -482,6 +515,17 @@ namespace ne
 		auto apsz = CountCodepointsOfUtf8(str.cstr(), str.cstr() + strsz);
 		internal = Ti::ExtendForwardFork(internal, apsz);
 		Utf8ToUtf32(internal->data, str.cstr(), str.cstr() + apsz);
+		Ti::ComputeHash(internal);
 		return *this;
 	}
+
+
+	void Text::swap(Text& text) {
+		utils::Swap(internal, text.internal);
+	}
+
+	void Swap(Text& x, Text& y) {
+		return x.swap(y);
+	}
+
 }

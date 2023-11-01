@@ -3,12 +3,15 @@ export import ntl.string.string;
 import ntl.string.unicode;
 import ntl.utils;
 import ntl.memory.allocator;
+import ntl.functional.hash;
 import ntl.iterator.reverse_iterator;
+import <compare>;
 
 namespace ne
 {
 	class TextIterator;
 	class TextConstIterator;
+	class TextInternal;
 }
 export namespace ne
 {
@@ -19,6 +22,11 @@ export namespace ne
 	class Text
 	{
 	public:
+		enum NormalizeStrategy
+		{
+			NFC, NFD, NFKD, NFKC
+		};
+
 		using SizeType = int64;
 		using ValueType = utf32;
 		using Reference = utf32&;
@@ -43,6 +51,8 @@ export namespace ne
 		Text(const utf32* str, const Allocator& allocator);
 		Text(const char* str, const Allocator& allocator);
 		Text(const utf8* str, const Allocator& allocator);
+		Text(const char* str, int64 len, const Allocator& allocator);
+		Text(const utf8* str, int64 len, const Allocator& allocator);
 		Text(const String& str, const Allocator& allocator);
 		~Text();
 
@@ -81,7 +91,7 @@ export namespace ne
 		Text& append(utf32 ch, int64 n = 1);
 		Text& append(char ch, int64 n = 1);
 		Text& append(utf8 ch, int64 n = 1);
-		Text& append(const Text& text);
+		Text& append(Text text);
 		Text& append(const utf32* str);
 		Text& append(const char* str);
 		Text& append(const utf8* str);
@@ -90,18 +100,25 @@ export namespace ne
 		Text& prepend(utf32 ch, int64 n = 1);
 		Text& prepend(char ch, int64 n = 1);
 		Text& prepend(utf8 ch, int64 n = 1);
-		Text& prepend(const Text& text);
+		Text& prepend(Text text);
 		Text& prepend(const utf32* str);
 		Text& prepend(const char* str);
 		Text& prepend(const utf8* str);
 		Text& prepend(const String& str);
 
-		void normalize();
+
+		void normalize(NormalizeStrategy strategy);
 		[[nodiscard]]
-		Text normalized();
+		Text normalized(NormalizeStrategy strategy);
 
 		int64 refcount() const;
+		HashValue hash() const;
 
+		friend bool operator==(Text lhs, Text rhs);
+		friend std::strong_ordering operator<=>(Text lhs, Text rhs);
+
+		void swap(Text& text);
+		friend void Swap(Text& lhs, Text& rhs);
 	private:
 		friend class TextInternal;
 		TextInternal* internal;

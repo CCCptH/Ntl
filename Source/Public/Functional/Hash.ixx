@@ -338,4 +338,22 @@ export namespace ne
 			return CityHash64(&u, sizeof(u));
 		}
 	};
+
+	namespace __internal
+	{
+		struct BytesView
+		{
+			void* data;
+			uint64 len;
+		};
+	}
+
+	template<>
+	struct Hash<__internal::BytesView>
+	{
+		constexpr HashValue operator()(const __internal::BytesView& b)
+		{
+			return CityHash64(static_cast<const uint8*>(b.data), b.len);
+		}
+	};
 }
