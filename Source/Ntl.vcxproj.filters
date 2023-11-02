@@ -48,6 +48,9 @@
     <Filter Include="Public\Algorithms">
       <UniqueIdentifier>{e0d8b652-a006-4628-989e-f7ace97279fd}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Private\String\unilib">
+      <UniqueIdentifier>{f1aef159-18f7-4070-b22f-22cd03d4b8a1}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Public\TypeTraits\BaseClasses.ixx">
@@ -380,8 +383,34 @@
     <ClCompile Include="Public\Ranges\Ranges.ixx">
       <Filter>Public\Ranges</Filter>
     </ClCompile>
+    <ClCompile Include="Private\String\unilib\unicode.cpp">
+      <Filter>Private\String\unilib</Filter>
+    </ClCompile>
+    <ClCompile Include="Private\String\unilib\uninorms.cpp">
+      <Filter>Private\String\unilib</Filter>
+    </ClCompile>
+    <ClCompile Include="Private\String\unilib\unistrip.cpp">
+      <Filter>Private\String\unilib</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\README.md" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Private\String\unilib\unicode.h">
+      <Filter>Private\String\unilib</Filter>
+    </ClInclude>
+    <ClInclude Include="Private\String\unilib\uninorms.h">
+      <Filter>Private\String\unilib</Filter>
+    </ClInclude>
+    <ClInclude Include="Private\String\unilib\unistrip.h">
+      <Filter>Private\String\unilib</Filter>
+    </ClInclude>
+    <ClInclude Include="Private\String\unilib\utf.h">
+      <Filter>Private\String\unilib</Filter>
+    </ClInclude>
+    <ClInclude Include="Private\String\unilib\version.h">
+      <Filter>Private\String\unilib</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
