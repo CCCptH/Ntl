@@ -5,6 +5,10 @@ import ntl.string.text;
 using namespace std;
 using namespace ne;
 
+void Print(Text t) {
+	cout << t.toString().cstr() << endl;
+}
+
 TEST(TestText, Constructor) {
 	Text text;
 	EXPECT_TRUE(text.isNull());
@@ -21,4 +25,10 @@ TEST(TestText, Constructor) {
 	}
 
 	EXPECT_EQ(t2.refcount(), 2);
+}
+
+TEST(TestText, Replace) {
+	Text t1 = "what the fuck";
+	t1.replace(0, 4, Text("shit"));
+	Print(t1);
 }

@@ -2,6 +2,7 @@ export module ntl.string.text;
 export import ntl.string.string;
 import ntl.string.unicode;
 import ntl.utils;
+import ntl.utils.nint;
 import ntl.memory.allocator;
 import ntl.functional.hash;
 import ntl.iterator.reverse_iterator;

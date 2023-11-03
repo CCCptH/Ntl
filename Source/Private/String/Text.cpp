@@ -565,6 +565,48 @@ namespace ne
 		return insert(pos, utf32(ch), count);
 	}
 
+	Text& Text::replace(SizeType pos, SizeType n, Text text)
+	{
+		auto len = text.size();
+		if (n <= len) {
+			auto diff = len - n;
+			internal = Ti::ExtendSplitFork(internal, pos, diff, allocator);
+			Utf32Cpy(internal->data + pos, text.data(), len);
+		}
+		else {
+			auto diff = n - len;
+			auto p = Ti::New(size() - diff, allocator);
+			Utf32Cpy(p->data, internal->data, pos);
+			Utf32Cpy(p->data + pos + n, internal->data + pos + diff, size() - pos - diff);
+			Utf32Cpy(p->data + pos, text.data(), len);
+			Ti::DecRef(internal, allocator);
+			internal = p;
+		}
+		return *this;
+	}
+	Text& Text::replace(SizeType pos, SizeType n, const char* str) {
+		return replace(pos, n, Text(str, allocator));
+	}
+	Text& Text::replace(SizeType pos, SizeType n, const utf8* str) {
+		return replace(pos, n, Text(str, allocator));
+	}
+	Text& Text::replace(SizeType pos, SizeType n, const utf32* str) {
+		return replace(pos, n, Text(str, allocator));
+	}
+	Text& Text::replace(SizeType pos, SizeType n, const String& str) {
+		return replace(pos, n, Text(str, allocator));
+	}
+	Text& Text::replace(SizeType pos, SizeType n, char ch, SizeType count) {
+		return replace(pos, n, Text(count, ch, allocator));
+	}
+	Text& Text::replace(SizeType pos, SizeType n, utf8 ch, SizeType count) {
+		return replace(pos, n, Text(count, ch, allocator));
+	}
+	Text& Text::replace(SizeType pos, SizeType n, utf32 ch, SizeType count) {
+		return replace(pos, n, Text(count, ch, allocator));
+	}
+
+
 	void Text::swap(Text& text) {
 		utils::Swap(internal, text.internal);
 	}
